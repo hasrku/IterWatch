@@ -26,7 +26,7 @@ const Home = () => {
 
             <ListSidebar />
 
-            <AnimatePresence>
+            <AnimatePresence className="fixed">
                 {show && (
                     <Alert
                         status={status}

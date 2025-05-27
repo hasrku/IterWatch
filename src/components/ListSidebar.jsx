@@ -81,7 +81,7 @@ const Playlist = ({ name, epCount, curr }) => {
         const updated = playlists.filter((p) => p.name !== name);
         localStorage.setItem("playlists", JSON.stringify(updated));
         setShowMenu(false);
-        navigate("/");
+        navigate(0);
     };
 
     return (

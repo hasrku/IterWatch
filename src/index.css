@@ -10,6 +10,7 @@ body {
     --color-bglight: #222222;
     --color-bgbg: #121212;
     --color-hover: #414141;
+    --color-white: #ababab;
     --color-red: #ff0033;
 }
 
@@ -18,7 +19,7 @@ body {
         width: 13px;
     }
     ::-webkit-scrollbar-thumb {
-        background-color: #ffff;
+        background-color: #ababab;
         border-radius: 3px;
         border: 2px solid #121212;
         margin: 2px;
@@ -28,13 +29,16 @@ body {
     }
 
     ::-webkit-scrollbar-button:single-button:decrement {
-        background: url('data:image/svg+xml;utf8,<svg width="10" height="10" xmlns="http://www.w3.org/2000/svg"><polygon points="0,10 5,0 10,10" fill="white"/></svg>')
-            no-repeat center;
-        background-size: 6px;
+        background: #121212 url("./assets/up.svg") no-repeat center;
+        background-size: 16px;
+        height: 15px;
+        width: 100%;
     }
+
     ::-webkit-scrollbar-button:single-button:increment {
-        background: url('data:image/svg+xml;utf8,<svg width="10" height="10" xmlns="http://www.w3.org/2000/svg"><polygon points="0,0 5,10 10,0" fill="white"/></svg>')
-            no-repeat center;
-        background-size: 6px;
+        background: #121212 url("./assets/down.svg") no-repeat center;
+        background-size: 16px;
+        height: 15px;
+        width: 100%;
     }
 }
