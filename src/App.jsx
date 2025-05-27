@@ -7,6 +7,7 @@ import { AnimatePresence } from "framer-motion";
 import ListSidebar from "./components/ListSidebar";
 import Home from "./components/Home";
 import Watch from "./components/Watch";
+import NotFound from "./components/NotFound";
 
 const App = () => {
     const [baseLink, setBaseLink] = useState("");
@@ -24,27 +25,6 @@ const App = () => {
     };
 
     return (
-        // <div className="bg-bg min-h-screen relative text-white px-2 md:px-8 lg:px-16 pt-5">
-        //     <Logo size="text-3xl" />
-
-        //     <ListSidebar />
-
-        //     <AnimatePresence>
-        //         {show && (
-        //             <Alert
-        //                 status={status}
-        //                 message={message}
-        //             />
-        //         )}
-        //     </AnimatePresence>
-
-        //     <Search
-        //         baseLink={baseLink}
-        //         setBaseLink={setBaseLink}
-        //         showAlert={showAlert} // 🔁 pass to Search
-        //     />
-        // </div>
-
         <Router>
             <Routes>
                 <Route
@@ -54,6 +34,10 @@ const App = () => {
                 <Route
                     path="/watch/:playlistName"
                     element={<Watch />}
+                />
+                <Route
+                    path="*"
+                    element={<NotFound />}
                 />
             </Routes>
         </Router>

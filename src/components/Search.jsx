@@ -37,7 +37,8 @@ const Search = ({ baseLink, setBaseLink, showAlert }) => {
 
         const playlist = {
             name,
-            currentEp: parseInt(start),
+            currentEp: 0,
+            start: parseInt(start),
             epProgress: 0,
             links,
         };
@@ -52,7 +53,7 @@ const Search = ({ baseLink, setBaseLink, showAlert }) => {
     };
 
     return (
-        <div className="flex flex-col justify-center items-center">
+        <div className="flex mt-16 px-5 flex-col justify-center items-center">
             <p className="text-neutral-300 text-2xl">Usage</p>
             <p className="text-neutral-400 whitespace-pre-line">
                 Direct video link with `###` (e.g., https://.../episode.###.mp4).{"\n"}
@@ -68,12 +69,12 @@ const Search = ({ baseLink, setBaseLink, showAlert }) => {
                     placeholder="enter base link"
                     value={baseLink}
                     onChange={(e) => setBaseLink(e.target.value)}
-                    className="text-xl pl-5 pr-13 max-w-3xl w-[100%] py-2 bg-bgbg rounded-l-4xl border-2 border-bglight"
+                    className=" lg:text-xl pl-5 pr-13 max-w-3xl w-[100%] py-2 bg-bgbg rounded-l-4xl border-2 border-bglight"
                 />
-                <div className="flex relative justify-center items-center bg-bglight px-4 py-1.5 rounded-r-4xl cursor-pointer">
+                <div className="flex relative justify-center items-center bg-bglight px-2 lg:px-4 py-1 lg:py-1.5 rounded-r-4xl cursor-pointer">
                     {baseLink && (
                         <div
-                            className="absolute right-17 rounded-full  top-1/2 transform -translate-y-1/2 p-2 text-white hover:bg-neutral-700/90"
+                            className="absolute right-12 lg:right-17 rounded-full  top-1/2 transform -translate-y-1/2 p-2 text-white hover:bg-neutral-700/90"
                             onClick={() => {
                                 setBaseLink("");
                                 inputRef.current?.focus();
@@ -85,7 +86,7 @@ const Search = ({ baseLink, setBaseLink, showAlert }) => {
                     <CiSearch size={35} />
                 </div>
             </div>
-            <p className="mt-16 text-center mb-5 text-2xl">enter start and end episode</p>
+            <p className="mt-12 text-center mb-5 text-xl lg:text-2xl">enter start and end episode</p>
             <div className="flex gap-4  justify-center">
                 <input
                     type="number"

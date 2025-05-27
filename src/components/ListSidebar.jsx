@@ -23,7 +23,7 @@ const ListSidebar = () => {
             {!isOpen && (
                 <div>
                     <IoIosMenu
-                        className={`absolute z-40 right-4 lg:right-16 top-5 size-11 cursor-pointer fill-white p-2 rounded-full bg-bglight`}
+                        className={`absolute z-40 right-4 lg:right-16 top-5 size-9 lg:size-11 cursor-pointer fill-white p-1 lg:p-2 rounded-full bg-bglight`}
                         onClick={handleIconClick}
                     />
                 </div>
@@ -81,7 +81,7 @@ const Playlist = ({ name, epCount, curr }) => {
         const updated = playlists.filter((p) => p.name !== name);
         localStorage.setItem("playlists", JSON.stringify(updated));
         setShowMenu(false);
-        navigate(0); // reload page to reflect changes
+        navigate("/");
     };
 
     return (
@@ -93,7 +93,7 @@ const Playlist = ({ name, epCount, curr }) => {
                 <p className="text-xl text-neutral-200 flex items-center ">
                     {name}
                     <span className="ml-2 text-sm text-neutral-500">
-                        • {curr} / {epCount} ep
+                        • {curr + 1} / {epCount} ep
                     </span>
                 </p>
             </Link>
