@@ -96,6 +96,32 @@ const Watch = () => {
         };
     }, []);
 
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const interval = setInterval(() => {
+            if (!video.paused && !video.ended) {
+                const currentPlaylist = JSON.parse(localStorage.getItem("playlist")) || {};
+                currentPlaylist.epProgress = Math.floor(video.currentTime);
+                currentPlaylist.currentEp = currentIndex;
+                localStorage.setItem("playlist", JSON.stringify(currentPlaylist));
+            }
+        }, 10000); // every 10 seconds
+
+        return () => clearInterval(interval);
+    }, [currentIndex]);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const stored = JSON.parse(localStorage.getItem("playlist"));
+        if (stored && stored.currentEp === currentIndex && stored.epProgress > 0) {
+            video.currentTime = stored.epProgress;
+        }
+    }, [currentIndex]);
+
     if (!playlist) return <NotFound />;
 
     return (
@@ -111,7 +137,7 @@ const Watch = () => {
                     <h2 className="text-2xl mb-4 font-bold">
                         {playlist.name}{" "}
                         <span className="text-sm ml-4  text-neutral-400">
-                            Episode: {currentIndex + playlist.start} of {playlist.links.length + playlist.start - 1}
+                            Episode: {currentIndex + 1} of {playlist.links.length}
                         </span>
                     </h2>
                     <video
