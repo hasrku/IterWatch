@@ -15,6 +15,7 @@ const Watch = () => {
     const videoRef = useRef(null);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const containerRef = useRef(null);
+    const [showControls, setShowControls] = useState(false);
 
     useEffect(() => {
         const data = JSON.parse(localStorage.getItem("playlists") || "[]");
@@ -171,42 +172,58 @@ const Watch = () => {
         };
     }, [currentIndex]);
 
+    useEffect(() => {
+        if (!isFullScreen) return;
+
+        let timeout;
+        const showAndHideControls = () => {
+            setShowControls(true);
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                setShowControls(false);
+            }, 2000);
+        };
+
+        const container = containerRef.current;
+
+        container.addEventListener("mousemove", showAndHideControls);
+        container.addEventListener("touchstart", showAndHideControls);
+
+        return () => {
+            container.removeEventListener("mousemove", showAndHideControls);
+            container.removeEventListener("touchstart", showAndHideControls);
+            clearTimeout(timeout);
+        };
+    }, [isFullScreen]);
+
     if (!playlist) return <NotFound />;
 
     return (
-        <div className="flex flex-col h-screen  lg:px-16 pt-5 bg-bg overflow-hidden overflow-y-hidden">
-            <div className="pl-5">
-                <Logo size="text-2xl lg:text-3xl" />
+        <div className="flex flex-col h-screen  lg:px-16 pt-2 bg-bg overflow-hidden overflow-y-hidden">
+            <div className="pl-2">
+                <Logo size="text-2xl" />
             </div>
 
             <ListSidebar />
 
-            <div className="flex flex-col lg:flex-row justify-center items-center gap-0 lg:gap-15 w-screen mt-5 lg:mt-15 bg-bg text-white overflow-y-hidden">
-                <div className="h-[55vh] lg:h-full text-white flex flex-col items-center justify-center overflow-y-hidden">
-                    <h2 className="text-2xl mb-4 font-bold">
-                        {playlist.name}{" "}
-                        <span className="text-sm ml-4  text-neutral-400">
-                            Episode: {currentIndex + 1} of {playlist.links.length}
-                        </span>
-                    </h2>
+            <div className="flex flex-col h-screen lg:flex-row justify-center items-center gap-0 lg:gap-15 w-full mt-2 lg:mt-4  bg-bg text-white overflow-y-hidden">
+                <div className="h-max lg:h-full text-white flex flex-col  lg:justify-center overflow-y-hidden">
                     <div
-                        className="relative h-full w-full text-neutral-50"
+                        className={`relative h-90 lg:h-fit lg:w-[55vw]  overflow-hidden text-neutral-50`}
                         ref={containerRef}
                     >
                         <video
                             key={playlist.links[currentIndex]}
                             controls
                             ref={videoRef}
-                            className={`rounded-lg shadow transition-all duration-300 ${
-                                isFullScreen ? "w-screen h-screen object-contain" : "w-[95vw] lg:w-[70vw] max-w-3xl"
-                            }`}
+                            className="rounded-sm w-full h-full shadow transition-all duration-300"
                             src={playlist.links[currentIndex]}
                             autoPlay
                         />
-                        {!isPlaying && (
+                        {(!isPlaying || (showControls && isFullScreen)) && (
                             <>
                                 <div className="absolute top-0 left-1/2  h-full w-0">
-                                    <div className={`absolute top-1/2 translate-x-[-50%] translate-y-[-50%] flex gap-55`}>
+                                    <div className={`absolute top-1/2 translate-x-[-50%] translate-y-[-50%] flex gap-35`}>
                                         <button
                                             onClick={() => goTo(-1)}
                                             className="p-4 bg-[#22222268] rounded-full disabled:opacity-40 cursor-pointer"
@@ -236,7 +253,7 @@ const Watch = () => {
                                 </button>
                                 <button
                                     onClick={() => videoControl(" ")}
-                                    className="absolute bottom-1/2 left-1/2 p-2 translate-x-[-50%] translate-y-[30%] lg:translate-y-[50%] bg-[#222222af] rounded-full disabled:opacity-40 cursor-pointer"
+                                    className="absolute bottom-1/2 left-1/2 p-2 translate-x-[-50%] translate-y-[27%] lg:translate-y-[50%] bg-[#222222af] rounded-full disabled:opacity-40 cursor-pointer"
                                     disabled={currentIndex === 0}
                                 >
                                     {isPlaying ? <IoIosPause className="size-10" /> : <IoIosPlay className="size-10" />}
@@ -244,7 +261,13 @@ const Watch = () => {
                             </>
                         )}
                     </div>
-                    <div className="mt-4 flex gap-4">
+                    <h2 className="text-xl ml-1 mt-1 font-bold text-neutral-50">
+                        {playlist.name}{" "}
+                        <span className="text-lg font-medium ml-2  text-neutral-400">
+                            Episode: {currentIndex + 1} of {playlist.links.length}
+                        </span>
+                    </h2>
+                    <div className="mt-2 lg:mt-4 flex gap-4 w-full items-center justify-center">
                         <button
                             onClick={() => goTo(-1)}
                             className="px-4 py-2 bg-bglight rounded disabled:opacity-40 cursor-pointer"
@@ -280,7 +303,7 @@ const Watch = () => {
 
                 <div
                     id="playlist-scroll-container"
-                    className="w-[90vw]  lg:w-[300px] h-[70vh] mt-2 lg:mt-0 overflow-y-auto bg-neutral-800 rounded-xl p-4"
+                    className="w-screen  lg:w-[300px] h-[75vh] mt-4 lg:mt-0 overflow-y-auto bg-neutral-800 rounded-xl p-4"
                 >
                     <p className="text-xl font-semibold mb-4">Playlist</p>
                     <div className="playlist-scroll flex flex-col gap-3">
@@ -292,7 +315,7 @@ const Watch = () => {
                                 <button
                                     onClick={() => setCurrentIndex(index)}
                                     className={`w-full text-left p-3 rounded-md text-sm bg-neutral-700 hover:bg-neutral-600 transition ${
-                                        index === currentIndex ? "border-l-4 border-blue-400 bg-neutral-600" : ""
+                                        index === currentIndex ? "border-l-4 border-blue-400 bg-neutral-600 text-neutral-50" : ""
                                     }`}
                                 >
                                     Episode {index + playlist.start}
