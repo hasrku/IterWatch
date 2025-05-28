@@ -33,8 +33,6 @@ const Search = ({ baseLink, setBaseLink, showAlert }) => {
 
     // Function to save links
     const saveLinks = () => {
-        if (!name || links.length === 0) return;
-
         const playlist = {
             name,
             currentEp: 0,
@@ -42,13 +40,9 @@ const Search = ({ baseLink, setBaseLink, showAlert }) => {
             epProgress: 0,
             links,
         };
-
         const existing = JSON.parse(localStorage.getItem("playlists") || "[]");
-
         existing.push(playlist);
-
         localStorage.setItem("playlists", JSON.stringify(existing));
-
         showAlert("Success", "Playlist saved successfully!");
     };
 
@@ -56,10 +50,10 @@ const Search = ({ baseLink, setBaseLink, showAlert }) => {
         <div className="flex mt-16 px-5 flex-col justify-center items-center">
             <p className="text-neutral-300 text-2xl">Usage</p>
             <p className="text-neutral-400 whitespace-pre-line">
-                Direct video link with `###` (e.g., https://.../episode.###.mp4).{"\n"}
+                Direct video link with `###` (e.g., https://.../episode###.mp4).{"\n"}
                 `###` represents the part of the link where the episode number appears.{"\n"}
-                For example, if the link is https://.../episode.05.mp4, it has only 2 digits for the episode number,{"\n"}
-                so you should write: https://.../episode.##.mp4
+                For example, if the link is https://.../episode05.mp4, it has only 2 digits for the episode number,{"\n"}
+                so you should write: https://.../episode##.mp4
             </p>
 
             <div className="w-full flex mt-10 justify-center items-center ">
@@ -121,7 +115,7 @@ const Search = ({ baseLink, setBaseLink, showAlert }) => {
                         type="text"
                         value={name}
                         onChange={(e) => {
-                            setName(e.target.value);
+                            setName(e.target.value.trim());
                         }}
                         placeholder="Name"
                         className="text-xl px-5 mt-10 pr-13  max-w-[450px] py-2 bg-bgbg rounded-4xl border-2 border-bglight"

@@ -1,10 +1,10 @@
 import { Element, scroller } from "react-scroll";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useLayoutEffect } from "react";
 import { useParams } from "react-router-dom";
 import Logo from "./Logo";
 import ListSidebar from "./ListSidebar";
 import { IoMdSkipForward, IoMdSkipBackward, IoIosPlay, IoIosPause } from "react-icons/io";
-import { RiFullscreenFill } from "react-icons/ri";
+import { RiFullscreenFill, RiFullscreenExitFill } from "react-icons/ri";
 import NotFound from "./NotFound";
 
 const Watch = () => {
@@ -13,6 +13,8 @@ const Watch = () => {
     const [playlist, setPlaylist] = useState(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const videoRef = useRef(null);
+    const [isFullScreen, setIsFullScreen] = useState(false);
+    const containerRef = useRef(null);
 
     useEffect(() => {
         const data = JSON.parse(localStorage.getItem("playlists") || "[]");
@@ -53,6 +55,7 @@ const Watch = () => {
     // KEYBOARD CONTROLS
     const videoControl = (key) => {
         const video = videoRef.current;
+        const container = containerRef.current;
         if (!video) return;
 
         switch (key) {
@@ -74,7 +77,7 @@ const Watch = () => {
             case "f":
             case "F":
                 if (!document.fullscreenElement) {
-                    video.requestFullscreen().catch(console.error);
+                    container.requestFullscreen().catch(console.error);
                 } else {
                     document.exitFullscreen();
                 }
@@ -86,8 +89,11 @@ const Watch = () => {
 
     useEffect(() => {
         const handleKeyDown = (e) => {
-            e.preventDefault();
-            videoControl(e.key);
+            // Only prevent default for known keys to avoid breaking other behavior
+            if ([" ", "ArrowRight", "ArrowLeft", "f", "F"].includes(e.key)) {
+                e.preventDefault();
+                videoControl(e.key);
+            }
         };
 
         window.addEventListener("keydown", handleKeyDown);
@@ -97,29 +103,72 @@ const Watch = () => {
     }, []);
 
     useEffect(() => {
+        const container = containerRef.current;
+        const handleFullscreenChange = () => {
+            const isFull = !!document.fullscreenElement;
+            setIsFullScreen(isFull);
+            if (isFull && !document.fullscreenElement) {
+                container.requestFullscreen().catch(console.error);
+            }
+            console.log("Fullscreen mode:", isFull ? "entered" : "exited");
+        };
+
+        document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+        return () => {
+            document.removeEventListener("fullscreenchange", handleFullscreenChange);
+        };
+    }, []);
+
+    useEffect(() => {
         const video = videoRef.current;
-        if (!video) return;
+        if (!video || !playlist) return;
 
         const interval = setInterval(() => {
             if (!video.paused && !video.ended) {
-                const currentPlaylist = JSON.parse(localStorage.getItem("playlist")) || {};
-                currentPlaylist.epProgress = Math.floor(video.currentTime);
-                currentPlaylist.currentEp = currentIndex;
-                localStorage.setItem("playlist", JSON.stringify(currentPlaylist));
+                const allPlaylists = JSON.parse(localStorage.getItem("playlists"));
+                const updatedPlaylists = allPlaylists.map((p) =>
+                    p.name === playlist.name ? { ...p, epProgress: Math.floor(video.currentTime) } : p
+                );
+                localStorage.setItem("playlists", JSON.stringify(updatedPlaylists));
             }
         }, 10000); // every 10 seconds
 
         return () => clearInterval(interval);
     }, [currentIndex]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const video = videoRef.current;
-        if (!video) return;
+        if (!video || !playlist) return;
 
-        const stored = JSON.parse(localStorage.getItem("playlist"));
-        if (stored && stored.currentEp === currentIndex && stored.epProgress > 0) {
-            video.currentTime = stored.epProgress;
+        const allPlaylists = JSON.parse(localStorage.getItem("playlists"));
+        const found = allPlaylists.find((p) => p.name === playlist.name);
+
+        if (found && found.currentEp === currentIndex && found.epProgress > 0) {
+            video.currentTime = found.epProgress;
+        } else {
+            video.currentTime = 0;
+            const updatedPlaylists = allPlaylists.map((p) => (p.name === playlist.name ? { ...p, epProgress: 0 } : p));
+            localStorage.setItem("playlists", JSON.stringify(updatedPlaylists));
         }
+
+        const handlePlay = () => {
+            console.log("Video playing");
+            setIsPlaying(true);
+        };
+
+        const handlePause = () => {
+            console.log("Video paused");
+            setIsPlaying(false);
+        };
+
+        video.addEventListener("play", handlePlay);
+        video.addEventListener("pause", handlePause);
+
+        return () => {
+            video.removeEventListener("play", handlePlay);
+            video.removeEventListener("pause", handlePause);
+        };
     }, [currentIndex]);
 
     if (!playlist) return <NotFound />;
@@ -140,14 +189,61 @@ const Watch = () => {
                             Episode: {currentIndex + 1} of {playlist.links.length}
                         </span>
                     </h2>
-                    <video
-                        key={playlist.links[currentIndex]}
-                        controls
-                        ref={videoRef}
-                        className="w-[95vw] lg:w-[70vw] max-w-3xl rounded-lg shadow"
-                        src={playlist.links[currentIndex]}
-                        autoPlay
-                    />
+                    <div
+                        className="relative h-full w-full text-neutral-50"
+                        ref={containerRef}
+                    >
+                        <video
+                            key={playlist.links[currentIndex]}
+                            controls
+                            ref={videoRef}
+                            className={`rounded-lg shadow transition-all duration-300 ${
+                                isFullScreen ? "w-screen h-screen object-contain" : "w-[95vw] lg:w-[70vw] max-w-3xl"
+                            }`}
+                            src={playlist.links[currentIndex]}
+                            autoPlay
+                        />
+                        {!isPlaying && (
+                            <>
+                                <div className="absolute top-0 left-1/2  h-full w-0">
+                                    <div className={`absolute top-1/2 translate-x-[-50%] translate-y-[-50%] flex gap-55`}>
+                                        <button
+                                            onClick={() => goTo(-1)}
+                                            className="p-4 bg-[#22222268] rounded-full disabled:opacity-40 cursor-pointer"
+                                            disabled={currentIndex === 0}
+                                        >
+                                            <IoMdSkipBackward className="size-4 lg:size-5" />
+                                        </button>
+                                        <button
+                                            onClick={() => goTo(1)}
+                                            className="p-4 bg-[#22222268] rounded-full disabled:opacity-40 cursor-pointer"
+                                            disabled={currentIndex === playlist.links.length - 1}
+                                        >
+                                            <IoMdSkipForward className="size-4 lg:size-5" />
+                                        </button>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => videoControl("f")}
+                                    className="absolute top-2 right-2 px-3 py-3 bg-[#22222268] rounded-full disabled:opacity-40 cursor-pointer"
+                                    disabled={currentIndex === playlist.links.length - 1}
+                                >
+                                    {isFullScreen ? (
+                                        <RiFullscreenExitFill className="size-4 lg:size-5" />
+                                    ) : (
+                                        <RiFullscreenFill className="size-4 lg:size-5" />
+                                    )}
+                                </button>
+                                <button
+                                    onClick={() => videoControl(" ")}
+                                    className="absolute bottom-1/2 left-1/2 p-2 translate-x-[-50%] translate-y-[30%] lg:translate-y-[50%] bg-[#222222af] rounded-full disabled:opacity-40 cursor-pointer"
+                                    disabled={currentIndex === 0}
+                                >
+                                    {isPlaying ? <IoIosPause className="size-10" /> : <IoIosPlay className="size-10" />}
+                                </button>
+                            </>
+                        )}
+                    </div>
                     <div className="mt-4 flex gap-4">
                         <button
                             onClick={() => goTo(-1)}
@@ -156,6 +252,7 @@ const Watch = () => {
                         >
                             <IoMdSkipBackward />
                         </button>
+
                         <button
                             onClick={() => videoControl(" ")}
                             className="px-4 py-2 bg-bglight rounded disabled:opacity-40 cursor-pointer"
