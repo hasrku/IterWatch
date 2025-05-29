@@ -1,32 +1,92 @@
+import React, { forwardRef, useImperativeHandle } from "react";
 import { Element, scroller } from "react-scroll";
 import { useEffect, useState, useRef, useLayoutEffect } from "react";
 import { useParams } from "react-router-dom";
+import ReactPlayer from "react-player";
 import Logo from "./Logo";
-import ListSidebar from "./ListSidebar";
-import { IoMdSkipForward, IoMdSkipBackward, IoIosPlay, IoIosPause } from "react-icons/io";
-import { RiFullscreenFill, RiFullscreenExitFill } from "react-icons/ri";
 import NotFound from "./NotFound";
+import ListSidebar from "./ListSidebar";
+import { IoMdSkipForward, IoMdSkipBackward, IoIosPlay, IoIosPause, IoMdSettings, IoMdVolumeHigh, IoMdVolumeOff } from "react-icons/io";
+import { MdOutlineFullscreen, MdOutlineFullscreenExit } from "react-icons/md";
+import "./custom.css";
+import "./customVolume.css";
 
 const Watch = () => {
     const { playlistName } = useParams();
     const [isPlaying, setIsPlaying] = useState(true);
+    const [isStarted, setIsStarted] = useState(false);
+    const [isEnded, setIsEnded] = useState(false);
+    const [length, setLength] = useState(0);
     const [playlist, setPlaylist] = useState(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const videoRef = useRef(null);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const containerRef = useRef(null);
-    const [showControls, setShowControls] = useState(false);
+
+    const volumeSliderRef = useRef(null);
+    const [volume, setVolume] = useState(0);
+    const [muted, setMuted] = useState(true);
+
+    const videoSliderRef = useRef(null);
+    const [progress, setProgress] = useState(0);
+    const [secondsProgress, setSecondsProgress] = useState(0);
+    // const controlsRef = useRef(null);
+
+    const controlsRef = useRef({
+        setIsVisible: (visible) => {},
+    });
+
+    const formatTime = (seconds) => {
+        const date = new Date(seconds * 1000);
+        const hh = date.getUTCHours();
+        const mm = date.getUTCMinutes();
+        const ss = date.getUTCSeconds();
+
+        if (hh) {
+            return `${hh}:${mm.toString().padStart(2, "0")}:${ss.toString().padStart(2, "0")}`;
+        }
+        return `${mm}:${ss.toString().padStart(2, "0")}`;
+    };
+    const handleVolumeChange = (e) => {
+        const val = e.target.value;
+        setVolume(val);
+        changeVolumeBar(val);
+        if (muted && val > 0) {
+            setMuted(false);
+        }
+        if (val == 0) {
+            setMuted(true);
+        }
+    };
+    const changeVolumeBar = (val) => {
+        volumeSliderRef.current.style.setProperty("--value-percent", `${val}%`);
+    };
+    const handleChange = (e) => {
+        const val = parseFloat(e.target.value);
+        setProgress(val);
+        // Seek to the position in the video
+        if (videoRef.current) {
+            const duration = videoRef.current.getDuration();
+            const seekTo = (val / 100) * duration;
+            videoRef.current.seekTo(seekTo);
+        }
+        // Update the seekbar visual
+        e.target.style.setProperty("--value-percent", `${val}%`);
+    };
+    const handleProgress = (state) => {
+        const { played, playedSeconds } = state;
+        setProgress(played * 100);
+        setSecondsProgress(playedSeconds);
+        videoSliderRef.current.style.setProperty("--value-percent", `${played * 100}%`);
+    };
 
     useEffect(() => {
         const data = JSON.parse(localStorage.getItem("playlists") || "[]");
         const found = data.find((p) => p.name === playlistName);
         if (found) {
             setPlaylist(found);
-            setCurrentIndex(found.currentEp); // auto adjust index
+            setCurrentIndex(found.currentEp);
         }
-        // console.log(currentIndex);
-        // console.log(playlistName);
-        // console.log(found);
     }, [playlistName]);
 
     useEffect(() => {
@@ -53,27 +113,41 @@ const Watch = () => {
         });
     };
 
-    // KEYBOARD CONTROLS
     const videoControl = (key) => {
-        const video = videoRef.current;
         const container = containerRef.current;
-        if (!video) return;
+        const video = videoRef.current;
 
         switch (key) {
             case " ":
-                if (video.paused) {
-                    video.play();
-                    setIsPlaying(true);
-                } else {
-                    video.pause();
-                    setIsPlaying(false);
-                }
+                setIsPlaying(!isPlaying);
                 break;
             case "ArrowRight":
-                video.currentTime += 10;
+                videoRef.current.seekTo(videoRef.current.getCurrentTime() + 10);
                 break;
             case "ArrowLeft":
-                video.currentTime -= 10;
+                videoRef.current.seekTo(videoRef.current.getCurrentTime() - 10);
+                break;
+            case "ArrowUp":
+                setVolume((prev) => {
+                    const newVolume = Math.min(prev + 5, 100);
+                    changeVolumeBar(newVolume);
+                    // Unmute if increasing volume from 0
+                    if (newVolume > 0 && muted) {
+                        setMuted(false);
+                    }
+                    return newVolume;
+                });
+                break;
+            case "ArrowDown":
+                setVolume((prev) => {
+                    const newVolume = Math.max(prev - 5, 0);
+                    changeVolumeBar(newVolume);
+                    // Mute if volume reaches 0
+                    if (newVolume === 0) {
+                        setMuted(true);
+                    }
+                    return newVolume;
+                });
                 break;
             case "f":
             case "F":
@@ -83,6 +157,19 @@ const Watch = () => {
                     document.exitFullscreen();
                 }
                 break;
+            case "m":
+            case "M":
+                setMuted(!muted);
+                if (muted) {
+                    setMuted(false);
+                    setVolume(100);
+                    changeVolumeBar(100);
+                } else {
+                    setMuted(true);
+                    setVolume(0);
+                    changeVolumeBar(0);
+                }
+                break;
             default:
                 break;
         }
@@ -90,9 +177,9 @@ const Watch = () => {
 
     useEffect(() => {
         const handleKeyDown = (e) => {
-            // Only prevent default for known keys to avoid breaking other behavior
-            if ([" ", "ArrowRight", "ArrowLeft", "f", "F"].includes(e.key)) {
+            if ([" ", "ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "f", "F", "m", "M"].includes(e.key)) {
                 e.preventDefault();
+                console.log(e.key);
                 videoControl(e.key);
             }
         };
@@ -101,7 +188,34 @@ const Watch = () => {
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
         };
-    }, []);
+    }, [isPlaying, muted]);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video || !playlist) return;
+
+        const allPlaylists = JSON.parse(localStorage.getItem("playlists"));
+        const updatedPlaylists = allPlaylists.map((p) => (p.name === playlist.name ? { ...p, epProgress: secondsProgress } : p));
+        const found = allPlaylists.find((p) => p.name === playlist.name);
+        // console.log(found.epProgress);
+        localStorage.setItem("playlists", JSON.stringify(updatedPlaylists));
+    }, [secondsProgress]);
+
+    useLayoutEffect(() => {
+        const video = videoRef.current;
+        if (!video || !playlist || !isStarted) return;
+
+        const allPlaylists = JSON.parse(localStorage.getItem("playlists"));
+        const found = allPlaylists.find((p) => p.name === playlist.name);
+        // console.log(found.epProgress);
+        if (found && found.currentEp === currentIndex && found.epProgress > 0) {
+            video.seekTo(found.epProgress);
+        } else {
+            video.seekTo(0);
+            const updatedPlaylists = allPlaylists.map((p) => (p.name === playlist.name ? { ...p, epProgress: 0 } : p));
+            localStorage.setItem("playlists", JSON.stringify(updatedPlaylists));
+        }
+    }, [currentIndex, isStarted]);
 
     useEffect(() => {
         const container = containerRef.current;
@@ -121,189 +235,178 @@ const Watch = () => {
         };
     }, []);
 
-    useEffect(() => {
-        const video = videoRef.current;
-        if (!video || !playlist) return;
-
-        const interval = setInterval(() => {
-            if (!video.paused && !video.ended) {
-                const allPlaylists = JSON.parse(localStorage.getItem("playlists"));
-                const updatedPlaylists = allPlaylists.map((p) =>
-                    p.name === playlist.name ? { ...p, epProgress: Math.floor(video.currentTime) } : p
-                );
-                localStorage.setItem("playlists", JSON.stringify(updatedPlaylists));
-            }
-        }, 10000); // every 10 seconds
-
-        return () => clearInterval(interval);
-    }, [currentIndex]);
-
-    useLayoutEffect(() => {
-        const video = videoRef.current;
-        if (!video || !playlist) return;
-
-        const allPlaylists = JSON.parse(localStorage.getItem("playlists"));
-        const found = allPlaylists.find((p) => p.name === playlist.name);
-
-        if (found && found.currentEp === currentIndex && found.epProgress > 0) {
-            video.currentTime = found.epProgress;
-        } else {
-            video.currentTime = 0;
-            const updatedPlaylists = allPlaylists.map((p) => (p.name === playlist.name ? { ...p, epProgress: 0 } : p));
-            localStorage.setItem("playlists", JSON.stringify(updatedPlaylists));
-        }
-
-        const handlePlay = () => {
-            console.log("Video playing");
-            setIsPlaying(true);
-        };
-
-        const handlePause = () => {
-            console.log("Video paused");
-            setIsPlaying(false);
-        };
-
-        video.addEventListener("play", handlePlay);
-        video.addEventListener("pause", handlePause);
-
-        return () => {
-            video.removeEventListener("play", handlePlay);
-            video.removeEventListener("pause", handlePause);
-        };
-    }, [currentIndex]);
-
-    useEffect(() => {
-        if (!isFullScreen) return;
-
-        let timeout;
-        const showAndHideControls = () => {
-            setShowControls(true);
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                setShowControls(false);
-            }, 2000);
-        };
-
-        const container = containerRef.current;
-
-        container.addEventListener("mousemove", showAndHideControls);
-        container.addEventListener("touchstart", showAndHideControls);
-
-        return () => {
-            container.removeEventListener("mousemove", showAndHideControls);
-            container.removeEventListener("touchstart", showAndHideControls);
-            clearTimeout(timeout);
-        };
-    }, [isFullScreen]);
-
     if (!playlist) return <NotFound />;
 
     return (
-        <div className="flex flex-col h-screen  lg:px-16 pt-2 bg-bg overflow-hidden overflow-y-hidden">
+        <div className="flex flex-col h-screen lg:px-16 pt-2 bg-bg overflow-hidden overflow-y-hidden">
             <div className="pl-2">
                 <Logo size="text-2xl" />
             </div>
 
             <ListSidebar />
 
-            <div className="flex flex-col h-screen lg:flex-row justify-center items-center gap-0 lg:gap-15 w-full mt-2 lg:mt-4  bg-bg text-white overflow-y-hidden">
-                <div className="h-max lg:h-full text-white flex flex-col  lg:justify-center overflow-y-hidden">
+            <div className="flex flex-col lg:flex-row justify-center  gap-0 lg:gap-15 w-full mt-2 lg:mt-16  bg-bg text-neutral-50 overflow-y-hidden">
+                <div className="h-max lg:h-full text-neutral-50 flex flex-col overflow-y-hidden">
                     <div
-                        className={`relative h-90 lg:h-fit lg:w-[55vw]  overflow-hidden text-neutral-50`}
+                        className={`relative lg:rounded-md h-67 w-screen aspect-video lg:h-fit lg:w-[55vw] overflow-hidden`}
                         ref={containerRef}
+                        onMouseMove={() => {
+                            controlsRef.current?.setIsVisible(true);
+                        }}
                     >
-                        <video
-                            key={playlist.links[currentIndex]}
-                            controls
+                        {/* video player */}
+                        <ReactPlayer
+                            url={playlist.links[currentIndex]}
                             ref={videoRef}
-                            className="rounded-sm w-full h-full shadow transition-all duration-300"
-                            src={playlist.links[currentIndex]}
-                            autoPlay
+                            playing={isPlaying}
+                            onEnded={() => {
+                                setIsEnded(true);
+                            }}
+                            onDuration={(e) => setLength(e)}
+                            onProgress={handleProgress}
+                            muted={muted}
+                            volume={volume / 100}
+                            onStart={() => {
+                                videoControl("m");
+                                setIsStarted(true);
+                            }}
+                            width="100%"
+                            height="100%"
+                            className="absolute top-0 left-0"
+                            style={{ objectFit: "cover" }}
                         />
-                        {(!isPlaying || (showControls && isFullScreen)) && (
-                            <>
-                                <div className="absolute top-0 left-1/2  h-full w-0">
-                                    <div className={`absolute top-1/2 translate-x-[-50%] translate-y-[-50%] flex gap-35`}>
-                                        <button
-                                            onClick={() => goTo(-1)}
-                                            className="p-4 bg-[#22222268] rounded-full disabled:opacity-40 cursor-pointer"
-                                            disabled={currentIndex === 0}
-                                        >
-                                            <IoMdSkipBackward className="size-4 lg:size-5" />
-                                        </button>
-                                        <button
-                                            onClick={() => goTo(1)}
-                                            className="p-4 bg-[#22222268] rounded-full disabled:opacity-40 cursor-pointer"
-                                            disabled={currentIndex === playlist.links.length - 1}
-                                        >
-                                            <IoMdSkipForward className="size-4 lg:size-5" />
-                                        </button>
-                                    </div>
-                                </div>
+
+                        {/* video controls section */}
+                        <Controls
+                            ref={controlsRef}
+                            isPlaying={isPlaying}
+                        >
+                            {/* top controls */}
+                            <div className="w-full flex justify-between bg-linear-0 from-[#26262600] to-[#262626e1] px-3 pb-2 pt-3">
+                                <p className={`font-bold lg:font-normal  ml-2 ${isFullScreen ? "text-lg lg:text-2xl" : "text-lg"} `}>
+                                    {playlist.name}
+                                    {" -"}
+                                    <span className=" ml-2  ">
+                                        Episode: {currentIndex + 1} of {playlist.links.length}
+                                    </span>
+                                </p>
+                                <button className="p-1 rounded-full disabled:opacity-40 cursor-pointer">
+                                    <IoMdSettings className={` ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
+                                </button>
+                            </div>
+
+                            {/* middle controls */}
+                            <div className={`flex gap-10 lg:gap-25 justify-center `}>
                                 <button
-                                    onClick={() => videoControl("f")}
-                                    className="absolute top-2 right-2 px-3 py-3 bg-[#22222268] rounded-full disabled:opacity-40 cursor-pointer"
-                                    disabled={currentIndex === playlist.links.length - 1}
+                                    onClick={() => goTo(-1)}
+                                    className="p-2 px-3.5  rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]"
+                                    disabled={currentIndex === 0}
                                 >
-                                    {isFullScreen ? (
-                                        <RiFullscreenExitFill className="size-4 lg:size-5" />
-                                    ) : (
-                                        <RiFullscreenFill className="size-4 lg:size-5" />
-                                    )}
+                                    <IoMdSkipBackward className={`text-neutral-50 ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
                                 </button>
                                 <button
                                     onClick={() => videoControl(" ")}
-                                    className="absolute bottom-1/2 left-1/2 p-2 translate-x-[-50%] translate-y-[27%] lg:translate-y-[50%] bg-[#222222af] rounded-full disabled:opacity-40 cursor-pointer"
-                                    disabled={currentIndex === 0}
+                                    className="p-2 rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]"
                                 >
-                                    {isPlaying ? <IoIosPause className="size-10" /> : <IoIosPlay className="size-10" />}
+                                    {isPlaying ? (
+                                        <IoIosPause className="text-neutral-50 size-10 lg:size-13" />
+                                    ) : (
+                                        <IoIosPlay className="text-neutral-50 size-10 lg:size-13" />
+                                    )}
                                 </button>
-                            </>
-                        )}
+                                <button
+                                    onClick={() => goTo(1)}
+                                    className="p-2 px-3.5  rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]"
+                                    disabled={currentIndex === playlist.links.length - 1}
+                                >
+                                    <IoMdSkipForward className={`text-neutral-50  ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
+                                </button>
+                            </div>
+
+                            {/* bottom controls */}
+                            <div className="px-3 pb-3 flex flex-col bg-linear-0 from-[#262626e1]  to-[#26262600]">
+                                {/* video seekbar */}
+                                <input
+                                    type="range"
+                                    min={0}
+                                    max={100}
+                                    value={progress}
+                                    onChange={handleChange}
+                                    ref={videoSliderRef}
+                                    className="w-full h-1 mb-3 cursor-pointer custom-range "
+                                ></input>
+                                {/* video small controls */}
+                                <div className="flex flex-row justify-between bg-">
+                                    <div className={`flex gap-2 items-center justify-center ${isFullScreen ? "gap-5" : ""}`}>
+                                        <button
+                                            onClick={() => videoControl(" ")}
+                                            className="rounded-full disabled:opacity-40 cursor-pointer"
+                                        >
+                                            {isPlaying ? (
+                                                <IoIosPause className={` ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
+                                            ) : (
+                                                <IoIosPlay className={` ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
+                                            )}
+                                        </button>
+                                        <div className=" gap-2 justify-center items-center flex ">
+                                            <button
+                                                className="rounded-full disabled:opacity-40 cursor-pointer"
+                                                onClick={() => videoControl("m")}
+                                            >
+                                                {muted ? (
+                                                    <IoMdVolumeOff className={` ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
+                                                ) : (
+                                                    <IoMdVolumeHigh className={` ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
+                                                )}
+                                            </button>
+                                            <input
+                                                type="range"
+                                                min={0}
+                                                max={100}
+                                                value={volume}
+                                                ref={volumeSliderRef}
+                                                onChange={handleVolumeChange}
+                                                className={` h-1 bg-neutral-50 rounded-lg cursor-pointer customV-range`}
+                                            ></input>
+                                        </div>
+                                        <p
+                                            className={`ml-2 flex items-center font-bold lg:font-normal justify-center ${
+                                                isFullScreen ? "text-lg lg:text-xl" : "text-sm"
+                                            }`}
+                                        >
+                                            <span>{formatTime(secondsProgress)} /&nbsp;</span>
+                                            <span> {formatTime(length)}</span>
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2 items-center">
+                                        <button
+                                            onClick={() => videoControl("f")}
+                                            className=" rounded-full disabled:opacity-40 cursor-pointer"
+                                        >
+                                            {isFullScreen ? (
+                                                <MdOutlineFullscreenExit className={` ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
+                                            ) : (
+                                                <MdOutlineFullscreen className={` ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </Controls>
                     </div>
                     <h2 className="text-xl ml-1 mt-1 font-bold text-neutral-50">
-                        {playlist.name}{" "}
+                        {playlist.name}&nbsp;
+                        {" -"}
                         <span className="text-lg font-medium ml-2  text-neutral-400">
                             Episode: {currentIndex + 1} of {playlist.links.length}
                         </span>
                     </h2>
-                    <div className="mt-2 lg:mt-4 flex gap-4 w-full items-center justify-center">
-                        <button
-                            onClick={() => goTo(-1)}
-                            className="px-4 py-2 bg-bglight rounded disabled:opacity-40 cursor-pointer"
-                            disabled={currentIndex === 0}
-                        >
-                            <IoMdSkipBackward />
-                        </button>
-
-                        <button
-                            onClick={() => videoControl(" ")}
-                            className="px-4 py-2 bg-bglight rounded disabled:opacity-40 cursor-pointer"
-                            disabled={currentIndex === 0}
-                        >
-                            {isPlaying ? <IoIosPause /> : <IoIosPlay />}
-                        </button>
-
-                        <button
-                            onClick={() => videoControl("f")}
-                            className="px-4 py-2 bg-bglight rounded disabled:opacity-40 cursor-pointer"
-                            disabled={currentIndex === playlist.links.length - 1}
-                        >
-                            <RiFullscreenFill />
-                        </button>
-                        <button
-                            onClick={() => goTo(1)}
-                            className="px-4 py-2 bg-bglight rounded disabled:opacity-40 cursor-pointer"
-                            disabled={currentIndex === playlist.links.length - 1}
-                        >
-                            <IoMdSkipForward />
-                        </button>
-                    </div>
                 </div>
 
+                {/* playlist section  */}
                 <div
                     id="playlist-scroll-container"
-                    className="w-screen  lg:w-[300px] h-[75vh] mt-4 lg:mt-0 overflow-y-auto bg-neutral-800 rounded-xl p-4"
+                    className="w-full lg:w-[300px] h-[70vh] lg:h-full mt-4 lg:mt-0 overflow-y-auto bg-neutral-800 rounded-xl p-4"
                 >
                     <p className="text-xl font-semibold mb-4">Playlist</p>
                     <div className="playlist-scroll flex flex-col gap-3">
@@ -315,7 +418,7 @@ const Watch = () => {
                                 <button
                                     onClick={() => setCurrentIndex(index)}
                                     className={`w-full text-left p-3 rounded-md text-sm bg-neutral-700 hover:bg-neutral-600 transition ${
-                                        index === currentIndex ? "border-l-4 border-blue-400 bg-neutral-600 text-neutral-50" : ""
+                                        index === currentIndex ? "border-l-4 border-blue-400 bg-neutral-600 text-neutral-50" : "text-white"
                                     }`}
                                 >
                                     Episode {index + playlist.start}
@@ -330,3 +433,65 @@ const Watch = () => {
 };
 
 export default Watch;
+
+const Controls = forwardRef(({ children, isPlaying }, ref) => {
+    const [isVisible, setIsVisible] = useState(!isPlaying);
+    const timeoutRef = useRef(null);
+
+    // Expose setIsVisible to parent via ref
+    useImperativeHandle(ref, () => ({
+        setIsVisible,
+    }));
+
+    useEffect(() => {
+        if (!isPlaying) {
+            setIsVisible(true);
+            return;
+        }
+
+        if (isPlaying) {
+            timeoutRef.current = setTimeout(() => {
+                setIsVisible(false);
+            }, 2500);
+        }
+
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+    }, [isVisible, isPlaying]);
+
+    const showControls = () => {
+        setIsVisible(true);
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+        }
+        if (isPlaying) {
+            timeoutRef.current = setTimeout(() => {
+                setIsVisible(false);
+            }, 2500);
+        }
+    };
+
+    const hideControls = () => {
+        setIsVisible(false);
+    };
+
+    return (
+        <div
+            className={`absolute top-0 left-0 flex flex-col justify-between h-full w-full bg-[#26262622] transition-opacity duration-300 ${
+                isVisible ? "opacity-100" : "opacity-0"
+            }`}
+            onMouseEnter={showControls}
+            onMouseLeave={hideControls}
+            onTouchStart={showControls}
+            onTouchEnd={() => {
+                // Small delay before hiding controls on touch devices
+                setTimeout(hideControls, 3000);
+            }}
+        >
+            {children}
+        </div>
+    );
+});

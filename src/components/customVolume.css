@@ -1,0 +1,43 @@
+.customV-range {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    width: 70px;
+    --value-percent: 0%;
+}
+
+/* For WebKit browsers (Chrome, Safari, Edge) */
+.customV-range::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: linear-gradient(to right, #fafafa 0%, #fafafa var(--value-percent), #ababab70 var(--value-percent), #ababab70 100%);
+}
+
+.customV-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 14px;
+    width: 14px;
+    background-color: #fafafa;
+    border-radius: 9999px;
+    margin-top: -4px;
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+}
+
+/* For Firefox */
+.customV-range::-moz-range-track {
+    height: 6px;
+    background: linear-gradient(to right, #fafafa 0%, #fafafa var(--value-percent), #ababab70 var(--value-percent), #ababab70 100%);
+}
+
+.customV-range::-moz-range-thumb {
+    height: 14px;
+    width: 14px;
+    background-color: #fafafa;
+    border-radius: 9999px;
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+}

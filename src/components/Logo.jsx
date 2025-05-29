@@ -5,10 +5,10 @@ const Logo = ({ size = "text-xl" }) => {
     return (
         <a
             href="/"
-            className={`flex gap-1 items-center ${size} w-max`}
+            className={`flex gap-1 font-bold items-center ${size} w-max`}
         >
             <BiSolidCameraMovie className="fill-red" />
-            <p className="font-semibold font-sans text-white">IterWatch</p>
+            <p className="font-medium font-sans text-white">IterWatch</p>
         </a>
     );
 };
