@@ -330,7 +330,7 @@ const Watch = () => {
                                     <IoMdSkipForward className={`text-neutral-50  ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
                                 </button>
                                 <button
-                                    onClick={videoControl("ArrowRight")}
+                                    onClick={()=>videoControl("ArrowRight")}
                                     className={`p-2 px-3.5 rounded-full disabled:opacity-40 ${
                                         isFullScreen ? "block lg:hidden" : "hidden"
                                     } cursor-pointer bg-[#26262637]`}
