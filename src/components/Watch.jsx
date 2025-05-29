@@ -405,7 +405,7 @@ const Watch = () => {
                 {/* playlist section  */}
                 <div
                     id="playlist-scroll-container"
-                    className="w-full lg:w-[300px] h-[70vh] lg:h-full mt-4 lg:mt-0 overflow-y-auto bg-neutral-800 rounded-xl p-4"
+                    className="w-full lg:w-[300px] h-[70vh]  mt-4 lg:mt-0 overflow-y-auto bg-neutral-800 rounded-xl p-4"
                 >
                     <p className="text-xl font-semibold mb-4">Playlist</p>
                     <div className="playlist-scroll flex flex-col gap-3">
@@ -435,6 +435,8 @@ export default Watch;
 
 const Controls = forwardRef(({ children, isPlaying }, ref) => {
     const [isVisible, setIsVisible] = useState(!isPlaying);
+    const [isMouseActive, setIsMouseActive] = useState(true);
+    const mouseTimeoutRef = useRef(null);
     const timeoutRef = useRef(null);
 
     // Expose setIsVisible to parent via ref
@@ -463,6 +465,7 @@ const Controls = forwardRef(({ children, isPlaying }, ref) => {
 
     const showControls = () => {
         setIsVisible(true);
+        setIsMouseActive(true);
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
         }
@@ -473,18 +476,29 @@ const Controls = forwardRef(({ children, isPlaying }, ref) => {
         }
     };
 
+    const handleMouseMove = () => {
+        setIsMouseActive(true);
+        if (mouseTimeoutRef.current) {
+            clearTimeout(mouseTimeoutRef.current);
+        }
+        mouseTimeoutRef.current = setTimeout(() => {
+            setIsMouseActive(false);
+        }, 2000);
+    };
+
     const hideControls = () => {
         setIsVisible(false);
     };
 
     return (
         <div
-            className={`absolute top-0 left-0 flex flex-col justify-between h-full w-full bg-[#26262622] transition-opacity duration-300 ${
+            className={`absolute top-0 left-0 flex flex-col justify-between h-full w-full  transition-opacity duration-300 ${
                 isVisible ? "opacity-100" : "opacity-0"
-            }`}
+            } ${!isVisible && !isMouseActive ? "hide-cursor" : ""}`}
             onMouseEnter={showControls}
             onMouseLeave={hideControls}
             onTouchStart={showControls}
+            onMouseMove={handleMouseMove}
             onTouchEnd={() => {
                 // Small delay before hiding controls on touch devices
                 setTimeout(hideControls, 3000);

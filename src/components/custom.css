@@ -1,3 +1,7 @@
+.hide-cursor {
+    cursor: none !important;
+}
+
 .custom-range {
     -webkit-appearance: none;
     appearance: none;
