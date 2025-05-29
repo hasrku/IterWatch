@@ -6,7 +6,7 @@ import ReactPlayer from "react-player";
 import Logo from "./Logo";
 import NotFound from "./NotFound";
 import ListSidebar from "./ListSidebar";
-import { IoMdSkipForward, IoMdSkipBackward, IoIosPlay, IoIosPause, IoMdSettings, IoMdVolumeHigh, IoMdVolumeOff } from "react-icons/io";
+import { IoMdSkipForward, IoMdSkipBackward, IoIosPlay, IoIosPause, IoMdSettings, IoMdVolumeHigh, IoMdVolumeOff, IoMdRefresh } from "react-icons/io";
 import { MdOutlineFullscreen, MdOutlineFullscreenExit } from "react-icons/md";
 import "./custom.css";
 import "./customVolume.css";
@@ -15,7 +15,6 @@ const Watch = () => {
     const { playlistName } = useParams();
     const [isPlaying, setIsPlaying] = useState(true);
     const [isStarted, setIsStarted] = useState(false);
-    const [isEnded, setIsEnded] = useState(false);
     const [length, setLength] = useState(0);
     const [playlist, setPlaylist] = useState(null);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -260,7 +259,7 @@ const Watch = () => {
                             ref={videoRef}
                             playing={isPlaying}
                             onEnded={() => {
-                                setIsEnded(true);
+                                setIsPlaying(false);
                             }}
                             onDuration={(e) => setLength(e)}
                             onProgress={handleProgress}
