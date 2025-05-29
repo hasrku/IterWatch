@@ -7,7 +7,7 @@ import Logo from "./Logo";
 import NotFound from "./NotFound";
 import ListSidebar from "./ListSidebar";
 import { IoMdSkipForward, IoMdSkipBackward, IoIosPlay, IoIosPause, IoMdSettings, IoMdVolumeHigh, IoMdVolumeOff, IoMdRefresh } from "react-icons/io";
-import { MdOutlineFullscreen, MdOutlineFullscreenExit } from "react-icons/md";
+import { MdOutlineFullscreen, MdOutlineFullscreenExit, MdForward10, MdReplay10 } from "react-icons/md";
 import "./custom.css";
 import "./customVolume.css";
 
@@ -115,7 +115,7 @@ const Watch = () => {
     const videoControl = (key) => {
         const container = containerRef.current;
         const video = videoRef.current;
-
+        if (!video) return;
         switch (key) {
             case " ":
                 setIsPlaying(!isPlaying);
@@ -297,6 +297,13 @@ const Watch = () => {
                             {/* middle controls */}
                             <div className={`flex gap-10 lg:gap-25 justify-center `}>
                                 <button
+                                    onClick={() => videoControl("ArrowLeft")}
+                                    className="p-2 px-3.5 lg:hidden rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]"
+                                >
+                                    <MdReplay10 className={`text-neutral-50 ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
+                                </button>
+
+                                <button
                                     onClick={() => goTo(-1)}
                                     className="p-2 px-3.5  rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]"
                                     disabled={currentIndex === 0}
@@ -319,6 +326,12 @@ const Watch = () => {
                                     disabled={currentIndex === playlist.links.length - 1}
                                 >
                                     <IoMdSkipForward className={`text-neutral-50  ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
+                                </button>
+                                <button
+                                    onClick={videoControl("")}
+                                    className="p-2 px-3.5 lg:hidden rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]"
+                                >
+                                    <MdForward10 className={`text-neutral-50 ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
                                 </button>
                             </div>
 
