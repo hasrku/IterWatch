@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+html {
+    color-scheme: none;
+}
 body {
     padding: 0;
     margin: 0;

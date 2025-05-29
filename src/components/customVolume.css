@@ -4,6 +4,8 @@
     background: transparent;
     width: 70px;
     --value-percent: 0%;
+    color-scheme: light only;
+    forced-color-adjust: none;
 }
 
 /* For WebKit browsers (Chrome, Safari, Edge) */
