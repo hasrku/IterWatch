@@ -281,7 +281,7 @@ const Watch = () => {
                             isPlaying={isPlaying}
                         >
                             {/* top controls */}
-                            <div className="w-full flex justify-between bg-linear-0 from-[#26262600] to-[#262626e1] px-3 pb-2 pt-3">
+                            <div className="w-full flex justify-between bg-linear-0 from-[#26262600] to-[#0f0f0fd2] px-3 pb-2 pt-3">
                                 <p className={`font-bold lg:font-normal  ml-2 ${isFullScreen ? "text-lg lg:text-2xl" : "text-lg"} `}>
                                     {playlist.name}
                                     {" -"}
@@ -295,10 +295,10 @@ const Watch = () => {
                             </div>
 
                             {/* middle controls */}
-                            <div className={`flex gap-10 lg:gap-25 justify-center `}>
+                            <div className={`flex gap-10 lg:gap-25 justify-center items-center`}>
                                 <button
                                     onClick={() => videoControl("ArrowLeft")}
-                                    className={`p-2 px-3.5 rounded-full disabled:opacity-40 ${
+                                    className={`p-3 rounded-full disabled:opacity-40 ${
                                         isFullScreen ? "block lg:hidden" : "hidden"
                                     } cursor-pointer bg-[#26262637]`}
                                 >
@@ -307,7 +307,7 @@ const Watch = () => {
 
                                 <button
                                     onClick={() => goTo(-1)}
-                                    className="p-2 px-3.5  rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]"
+                                    className="p-3  rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]"
                                     disabled={currentIndex === 0}
                                 >
                                     <IoMdSkipBackward className={`text-neutral-50 ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
@@ -324,14 +324,14 @@ const Watch = () => {
                                 </button>
                                 <button
                                     onClick={() => goTo(1)}
-                                    className="p-2 px-3.5  rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]"
+                                    className="p-3  rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]"
                                     disabled={currentIndex === playlist.links.length - 1}
                                 >
                                     <IoMdSkipForward className={`text-neutral-50  ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
                                 </button>
                                 <button
                                     onClick={() => videoControl("ArrowRight")}
-                                    className={`p-2 px-3.5 rounded-full disabled:opacity-40 ${
+                                    className={`p-3 rounded-full disabled:opacity-40 ${
                                         isFullScreen ? "block lg:hidden" : "hidden"
                                     } cursor-pointer bg-[#26262637]`}
                                 >
@@ -340,7 +340,7 @@ const Watch = () => {
                             </div>
 
                             {/* bottom controls */}
-                            <div className="px-3 pb-3 flex flex-col bg-linear-0 from-[#262626e1]  to-[#26262600]">
+                            <div className="px-3 pb-3 flex flex-col bg-linear-0 from-[#0f0f0fd2]  to-[#26262600]">
                                 {/* video seekbar */}
                                 <input
                                     type="range"
@@ -349,11 +349,11 @@ const Watch = () => {
                                     value={progress}
                                     onChange={handleChange}
                                     ref={videoSliderRef}
-                                    className="w-full h-1 mb-3 cursor-pointer custom-range "
+                                    className="w-full h-1 mb-3  cursor-pointer custom-range "
                                 ></input>
                                 {/* video small controls */}
-                                <div className="flex flex-row justify-between bg-">
-                                    <div className={`flex gap-2 items-center justify-center ${isFullScreen ? "gap-5" : ""}`}>
+                                <div className={`flex flex-row justify-between lg:m-1 ${isFullScreen ? "m-2  " : ""}`}>
+                                    <div className={`flex items-center justify-center ${isFullScreen ? "gap-6" : " gap-2"}`}>
                                         <button
                                             onClick={() => videoControl(" ")}
                                             className="rounded-full disabled:opacity-40 cursor-pointer"

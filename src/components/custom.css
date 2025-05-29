@@ -45,3 +45,24 @@
     position: relative;
     z-index: 2;
 }
+
+@media screen and (max-width: 1024px) {
+    .custom-range::-webkit-slider-runnable-track {
+        height: 3px;
+    }
+    .custom-range::-webkit-slider-thumb {
+        height: 10px;
+        width: 10px;
+        margin-top: -4px;
+    }
+
+    /* For Firefox */
+    .custom-range::-moz-range-track {
+        height: 3px;
+    }
+
+    .custom-range::-moz-range-thumb {
+        height: 10px;
+        width: 10px;
+    }
+}
