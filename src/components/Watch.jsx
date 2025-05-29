@@ -331,13 +331,11 @@ const Watch = () => {
                                 </button>
                                 <button
                                     onClick={videoControl("")}
-                                    className={`p-2 px-3.5 hidden rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]`}
+                                    className={`p-2 px-3.5 rounded-full disabled:opacity-40 ${
+                                        isFullScreen ? "block lg:hidden" : "hidden"
+                                    } cursor-pointer bg-[#26262637]`}
                                 >
-                                    <MdForward10
-                                        className={`p-2 px-3.5 rounded-full disabled:opacity-40 ${
-                                            isFullScreen ? "block lg:hidden" : "hidden"
-                                        } cursor-pointer bg-[#26262637]`}
-                                    />
+                                    <MdForward10 className={`text-neutral-50 ${isFullScreen ? " size-6 lg:size-10" : "size-6 lg:size-7"}`} />
                                 </button>
                             </div>
 
