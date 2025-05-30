@@ -51,6 +51,7 @@ const ListSidebar = ({ right, top }) => {
                                 name={item.name}
                                 curr={item.currentEp}
                                 epCount={item.links.length}
+                                handleIconClick={handleIconClick}
                             />
                         );
                     })}
@@ -72,7 +73,7 @@ const ListSidebar = ({ right, top }) => {
     );
 };
 
-const Playlist = ({ name, epCount, curr }) => {
+const Playlist = ({ name, epCount, curr, handleIconClick }) => {
     const [showMenu, setShowMenu] = useState(false);
     const navigate = useNavigate();
 
@@ -89,6 +90,7 @@ const Playlist = ({ name, epCount, curr }) => {
             <Link
                 to={`/watch/${name}`}
                 className="mt-2 mx-1 px-4 py-3 bg-bgbg rounded-lg cursor-pointer block"
+                onClick={handleIconClick}
             >
                 <p className="text-xl text-neutral-200 flex items-center ">
                     {name}
@@ -100,11 +102,7 @@ const Playlist = ({ name, epCount, curr }) => {
 
             <div
                 className="absolute top-1/2 translate-y-[-50%] right-4 cursor-pointer z-20"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    setShowMenu(!showMenu);
-                }}
+                onClick={(e) => setShowMenu(!showMenu)}
             >
                 <BsThreeDotsVertical className="text-neutral-400 size-6 hover:text-white" />
             </div>

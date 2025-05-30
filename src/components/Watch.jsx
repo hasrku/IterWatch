@@ -10,6 +10,7 @@ import { IoMdSkipForward, IoMdSkipBackward, IoIosPlay, IoIosPause, IoMdSettings,
 import { MdOutlineFullscreen, MdOutlineFullscreenExit, MdForward10, MdReplay10 } from "react-icons/md";
 import "./custom.css";
 import "./customVolume.css";
+import ArcSpinner from "./ArcSpinner";
 
 const Watch = () => {
     const { playlistName } = useParams();
@@ -30,6 +31,8 @@ const Watch = () => {
     const [progress, setProgress] = useState(0);
     const [secondsProgress, setSecondsProgress] = useState(0);
     // const controlsRef = useRef(null);
+
+    const [isLoading, setIsLoading] = useState(false);
 
     const controlsRef = useRef({
         setIsVisible: (visible) => {},
@@ -158,7 +161,6 @@ const Watch = () => {
                 break;
             case "m":
             case "M":
-                setMuted(!muted);
                 if (muted) {
                     setMuted(false);
                     setVolume(100);
@@ -266,14 +268,29 @@ const Watch = () => {
                             muted={muted}
                             volume={volume / 100}
                             onStart={() => {
-                                videoControl("m");
+                                setTimeout(() => {
+                                    setMuted(false);
+                                    setVolume(100);
+                                    changeVolumeBar(100);
+                                }, 500);
                                 setIsStarted(true);
+                            }}
+                            onBuffer={() => {
+                                setIsLoading(true);
+                            }}
+                            onBufferEnd={() => {
+                                setIsLoading(false);
                             }}
                             width="100%"
                             height="100%"
                             className="absolute top-0 left-0"
                             style={{ objectFit: "cover" }}
                         />
+                        {isLoading && (
+                            <div className="absolute w-18 lg:w-25 aspect-square flex justify-center items-center top-1/2 left-1/2 translate-x-[-50%] translate-y-[-50%] text-5xl z-20 text-black">
+                                <ArcSpinner color={"#ffffff"} />
+                            </div>
+                        )}
 
                         {/* video controls section */}
                         <Controls
@@ -282,27 +299,27 @@ const Watch = () => {
                         >
                             {/* top controls */}
                             <div className="w-full flex justify-between bg-linear-0 from-[#26262600] to-[#0f0f0fd2] px-3 pb-2 pt-3">
-                                <p className={`font-bold lg:font-normal  ml-2 ${isFullScreen ? "text-lg lg:text-2xl" : "text-lg"} `}>
+                                <p className={`font-bold lg:font-normal ${isFullScreen ? "text-lg lg:text-3xl" : "lg:text-xl lg:ml-2"} `}>
                                     {playlist.name}
                                     {" -"}
                                     <span className=" ml-2  ">
                                         Episode: {currentIndex + 1} of {playlist.links.length}
                                     </span>
                                 </p>
-                                <button className="p-1 rounded-full disabled:opacity-40 cursor-pointer">
+                                <button className="p-1 rounded-full cursor-pointer">
                                     <IoMdSettings className={` ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
                                 </button>
                             </div>
 
                             {/* middle controls */}
-                            <div className={`flex gap-10 lg:gap-25 justify-center items-center`}>
+                            <div className={`text-neutral-50 flex gap-10 lg:gap-25 justify-center items-center`}>
                                 <button
                                     onClick={() => videoControl("ArrowLeft")}
                                     className={`p-3 rounded-full disabled:opacity-40 ${
                                         isFullScreen ? "block lg:hidden" : "hidden"
                                     } cursor-pointer bg-[#26262637]`}
                                 >
-                                    <MdReplay10 className={`text-neutral-50 ${isFullScreen ? " size-6 lg:size-10" : "size-6 lg:size-7"}`} />
+                                    <MdReplay10 className={` ${isFullScreen ? " size-6 lg:size-10" : "size-6 lg:size-7"}`} />
                                 </button>
 
                                 <button
@@ -310,24 +327,20 @@ const Watch = () => {
                                     className="p-3  rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]"
                                     disabled={currentIndex === 0}
                                 >
-                                    <IoMdSkipBackward className={`text-neutral-50 ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
+                                    <IoMdSkipBackward className={` ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
                                 </button>
                                 <button
                                     onClick={() => videoControl(" ")}
                                     className="p-2 rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]"
                                 >
-                                    {isPlaying ? (
-                                        <IoIosPause className="text-neutral-50 size-10 lg:size-13" />
-                                    ) : (
-                                        <IoIosPlay className="text-neutral-50 size-10 lg:size-13" />
-                                    )}
+                                    {isPlaying ? <IoIosPause className=" size-10 lg:size-13" /> : <IoIosPlay className=" size-10 lg:size-13" />}
                                 </button>
                                 <button
                                     onClick={() => goTo(1)}
                                     className="p-3  rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]"
                                     disabled={currentIndex === playlist.links.length - 1}
                                 >
-                                    <IoMdSkipForward className={`text-neutral-50  ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
+                                    <IoMdSkipForward className={`  ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
                                 </button>
                                 <button
                                     onClick={() => videoControl("ArrowRight")}
@@ -335,7 +348,7 @@ const Watch = () => {
                                         isFullScreen ? "block lg:hidden" : "hidden"
                                     } cursor-pointer bg-[#26262637]`}
                                 >
-                                    <MdForward10 className={`text-neutral-50 ${isFullScreen ? " size-6 lg:size-10" : "size-6 lg:size-7"}`} />
+                                    <MdForward10 className={` ${isFullScreen ? " size-6 lg:size-10" : "size-6 lg:size-7"}`} />
                                 </button>
                             </div>
 
@@ -387,7 +400,7 @@ const Watch = () => {
                                         </div>
                                         <p
                                             className={`ml-2 flex items-center font-bold lg:font-normal justify-center ${
-                                                isFullScreen ? "text-lg lg:text-xl" : "text-sm"
+                                                isFullScreen ? "text-md lg:text-xl" : "text-sm"
                                             }`}
                                         >
                                             <span>{formatTime(secondsProgress)} /&nbsp;</span>
@@ -470,7 +483,7 @@ const Controls = forwardRef(({ children, isPlaying }, ref) => {
         if (isPlaying) {
             timeoutRef.current = setTimeout(() => {
                 setIsVisible(false);
-            }, 2500);
+            }, 3000);
         }
 
         return () => {
@@ -489,7 +502,7 @@ const Controls = forwardRef(({ children, isPlaying }, ref) => {
         if (isPlaying) {
             timeoutRef.current = setTimeout(() => {
                 setIsVisible(false);
-            }, 2500);
+            }, 3000);
         }
     };
 
@@ -500,7 +513,7 @@ const Controls = forwardRef(({ children, isPlaying }, ref) => {
         }
         mouseTimeoutRef.current = setTimeout(() => {
             setIsMouseActive(false);
-        }, 2000);
+        }, 3000);
     };
 
     const hideControls = () => {
