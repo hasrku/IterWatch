@@ -51,7 +51,7 @@
     .customV-range::-webkit-slider-thumb {
         height: 10px;
         width: 10px;
-        margin-top: -4px;
+        margin-top: -3px;
     }
 
     /* For Firefox */

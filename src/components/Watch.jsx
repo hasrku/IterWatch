@@ -362,6 +362,7 @@ const Watch = () => {
                                     type="range"
                                     min={0}
                                     max={100}
+                                    step={0.01}
                                     value={progress}
                                     onChange={handleChange}
                                     ref={videoSliderRef}
@@ -525,7 +526,7 @@ const Controls = forwardRef(({ children, isPlaying }, ref) => {
 
     return (
         <div
-            className={`absolute top-0 left-0 flex flex-col justify-between h-full w-full  transition-opacity duration-300 ${
+            className={`absolute z-2 top-0 left-0 flex flex-col justify-between h-full w-full  transition-opacity duration-300 ${
                 isVisible ? "opacity-100" : "opacity-0"
             } ${!isVisible && !isMouseActive ? "hide-cursor" : ""}`}
             onMouseEnter={showControls}

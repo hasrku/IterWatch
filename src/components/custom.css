@@ -53,7 +53,7 @@
     .custom-range::-webkit-slider-thumb {
         height: 13px;
         width: 13px;
-        margin-top: -4px;
+        margin-top: -5px;
     }
 
     /* For Firefox */
