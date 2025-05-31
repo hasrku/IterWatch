@@ -64,8 +64,11 @@ const Watch = () => {
         volumeSliderRef.current.style.setProperty("--value-percent", `${val}%`);
     };
     const handleChange = (e) => {
-        const val = parseFloat(e.target.value);
+        const val = e.target.value;
         setProgress(val);
+        setSecondsProgress((length * val) / 100);
+        // console.log(e.target.value);
+        // console.log(length);
         // Seek to the position in the video
         if (videoRef.current) {
             const duration = videoRef.current.getDuration();
@@ -109,6 +112,7 @@ const Watch = () => {
     }, [currentIndex]);
 
     const goTo = (dir) => {
+        setIsPlaying(true);
         setCurrentIndex((prev) => {
             const next = prev + dir;
             return next >= 0 && next < playlist.links.length ? next : prev;
@@ -180,7 +184,6 @@ const Watch = () => {
         const handleKeyDown = (e) => {
             if ([" ", "ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "f", "F", "m", "M"].includes(e.key)) {
                 e.preventDefault();
-                console.log(e.key);
                 videoControl(e.key);
             }
         };
@@ -260,9 +263,7 @@ const Watch = () => {
                             url={playlist.links[currentIndex]}
                             ref={videoRef}
                             playing={isPlaying}
-                            onEnded={() => {
-                                setIsPlaying(false);
-                            }}
+                            onEnded={() => setIsPlaying(false)}
                             onDuration={(e) => setLength(e)}
                             onProgress={handleProgress}
                             muted={muted}
@@ -275,19 +276,15 @@ const Watch = () => {
                                 }, 500);
                                 setIsStarted(true);
                             }}
-                            onBuffer={() => {
-                                setIsLoading(true);
-                            }}
-                            onBufferEnd={() => {
-                                setIsLoading(false);
-                            }}
+                            onBuffer={() => setIsLoading(true)}
+                            onBufferEnd={() => setIsLoading(false)}
                             width="100%"
                             height="100%"
                             className="absolute top-0 left-0"
                             style={{ objectFit: "cover" }}
                         />
-                        {isLoading && (
-                            <div className="absolute w-18 lg:w-25 aspect-square flex justify-center items-center top-1/2 left-1/2 translate-x-[-50%] translate-y-[-50%] text-5xl z-20 text-black">
+                        {isLoading && isPlaying && (
+                            <div className="absolute z-1 w-18 lg:w-25 aspect-square flex justify-center items-center top-1/2 left-1/2 translate-x-[-50%] translate-y-[-50%] text-5xl text-black">
                                 <ArcSpinner color={"#ffffff"} />
                             </div>
                         )}
@@ -298,12 +295,17 @@ const Watch = () => {
                             isPlaying={isPlaying}
                         >
                             {/* top controls */}
-                            <div className="w-full flex justify-between bg-linear-0 from-[#26262600] to-[#0f0f0fd2] px-3 pb-2 pt-3">
-                                <p className={`font-bold lg:font-normal ${isFullScreen ? "text-lg lg:text-3xl" : "lg:text-xl lg:ml-2"} `}>
-                                    {playlist.name}
-                                    {" -"}
-                                    <span className=" ml-2  ">
+                            <div className="w-full flex justify-between items-start bg-linear-0 from-[#26262600] to-[#0f0f0fd2] px-3 pb-2 pt-3">
+                                <p
+                                    className={`font-bold ml-2 flex flex-col lg:font-normal ${
+                                        isFullScreen ? "text-lg lg:text-3xl" : "lg:text-xl lg:ml-2"
+                                    } `}
+                                >
+                                    <span className="">
                                         Episode: {currentIndex + 1} of {playlist.links.length}
+                                    </span>
+                                    <span className={`font-light text-sm lg:hidden text-white ${isFullScreen ? "block" : "hidden"}`}>
+                                        {playlist.name}
                                     </span>
                                 </p>
                                 <button className="p-1 rounded-full cursor-pointer">
