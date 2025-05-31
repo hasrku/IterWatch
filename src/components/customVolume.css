@@ -12,7 +12,7 @@
 .customV-range::-webkit-slider-runnable-track {
     height: 4px;
     border-radius: 9999px;
-    background: linear-gradient(to right, #fafafa 0%, #fafafa var(--value-percent), #ababab70 var(--value-percent), #ababab70 100%);
+    background: linear-gradient(to right, #fafafa 0%, #fafafa var(--value-percent), #ffffff69 var(--value-percent), #ffffff69 100%);
 }
 
 .customV-range::-webkit-slider-thumb {
@@ -31,7 +31,7 @@
 /* For Firefox */
 .customV-range::-moz-range-track {
     height: 6px;
-    background: linear-gradient(to right, #fafafa 0%, #fafafa var(--value-percent), #ababab70 var(--value-percent), #ababab70 100%);
+    background: linear-gradient(to right, #fafafa 0%, #fafafa var(--value-percent), #ffffff69 var(--value-percent), #ffffff69 100%);
 }
 
 .customV-range::-moz-range-thumb {

@@ -14,7 +14,7 @@
 .custom-range::-webkit-slider-runnable-track {
     height: 6px;
     border-radius: 9999px;
-    background: linear-gradient(to right, #ff0033 0%, #ff0033 var(--value-percent), #ababab70 var(--value-percent), #ababab70 100%);
+    background: linear-gradient(to right, #ff0033 0%, #ff0033 var(--value-percent), #ffffff69 var(--value-percent), #ffffff69 100%);
 }
 
 .custom-range::-webkit-slider-thumb {
@@ -33,7 +33,7 @@
 /* For Firefox */
 .custom-range::-moz-range-track {
     height: 6px;
-    background: linear-gradient(to right, #ff0033 0%, #ff0033 var(--value-percent), #ababab70 var(--value-percent), #ababab70 100%);
+    background: linear-gradient(to right, #ff0033 0%, #ff0033 var(--value-percent), #ffffff69 var(--value-percent), #ffffff69 100%);
 }
 
 .custom-range::-moz-range-thumb {
@@ -51,8 +51,8 @@
         height: 3px;
     }
     .custom-range::-webkit-slider-thumb {
-        height: 10px;
-        width: 10px;
+        height: 13px;
+        width: 13px;
         margin-top: -4px;
     }
 
@@ -62,7 +62,7 @@
     }
 
     .custom-range::-moz-range-thumb {
-        height: 10px;
-        width: 10px;
+        height: 13px;
+        width: 13px;
     }
 }

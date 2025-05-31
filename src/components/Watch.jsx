@@ -79,9 +79,11 @@ const Watch = () => {
         e.target.style.setProperty("--value-percent", `${val}%`);
     };
     const handleProgress = (state) => {
-        const { played, playedSeconds } = state;
+        const { played } = state;
         setProgress(played * 100);
-        setSecondsProgress(playedSeconds);
+        setSecondsProgress(played * length);
+        // console.log(played * 100);
+        // console.log(played * length);
         videoSliderRef.current.style.setProperty("--value-percent", `${played * 100}%`);
     };
 
@@ -254,9 +256,8 @@ const Watch = () => {
                     <div
                         className={`relative lg:rounded-md h-67 w-screen aspect-video lg:h-fit lg:w-[55vw] overflow-hidden`}
                         ref={containerRef}
-                        onMouseMove={() => {
-                            controlsRef.current?.setIsVisible(true);
-                        }}
+                        onMouseMove={() => controlsRef.current?.setIsVisible(true)}
+                        onTouchMove={() => controlsRef.current?.setIsVisible(true)}
                     >
                         {/* video player */}
                         <ReactPlayer
@@ -304,7 +305,7 @@ const Watch = () => {
                                     <span className="">
                                         Episode: {currentIndex + 1} of {playlist.links.length}
                                     </span>
-                                    <span className={`font-light text-sm lg:hidden text-white ${isFullScreen ? "block" : "hidden"}`}>
+                                    <span className={`font-semibold text-sm lg:hidden text-neutral-50/80 ${isFullScreen ? "block" : "hidden"}`}>
                                         {playlist.name}
                                     </span>
                                 </p>
@@ -335,7 +336,7 @@ const Watch = () => {
                                     onClick={() => videoControl(" ")}
                                     className="p-2 rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]"
                                 >
-                                    {isPlaying ? <IoIosPause className=" size-10 lg:size-13" /> : <IoIosPlay className=" size-10 lg:size-13" />}
+                                    {isPlaying ? <IoIosPause className=" size-12 lg:size-13" /> : <IoIosPlay className=" size-12 lg:size-13" />}
                                 </button>
                                 <button
                                     onClick={() => goTo(1)}
