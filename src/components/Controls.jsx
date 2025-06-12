@@ -59,7 +59,7 @@ const Controls = forwardRef(
                     setIsVisible(false);
                 }, 4000);
             }
-        }, [isVisible, isPlaying]);
+        }, [isVisible, isPlaying, showSpeed]);
 
         const showControls = () => {
             setIsVisible(true);
