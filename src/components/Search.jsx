@@ -15,7 +15,8 @@ const Search = ({ baseLink, setBaseLink, showAlert }) => {
 
         const hashMatch = baseLink.match(/#+/);
         if (!hashMatch || isNaN(startNum) || isNaN(endNum)) {
-            showAlert("Error", "Invalid format. Please use the format like .##.");
+            showAlert("Error", "Invalid format. Please use the format like .##. \nno new links generated.");
+            setLinks([baseLink]);
             return;
         }
 
@@ -100,7 +101,7 @@ const Search = ({ baseLink, setBaseLink, showAlert }) => {
             {links.length == 0 ? (
                 <button
                     onClick={generateLinks}
-                    disabled={!baseLink || !start || !end}
+                    disabled={!baseLink}
                     className={`mt-10 w-50 px-6 py-2 rounded font-semibold transition ${
                         !baseLink || !start || !end
                             ? "bg-bglight/50 text-gray-400 cursor-not-allowed"
@@ -110,7 +111,7 @@ const Search = ({ baseLink, setBaseLink, showAlert }) => {
                     Generate Links
                 </button>
             ) : (
-                <>
+                <div className=" flex flex-col justify-center w-fit">
                     <input
                         type="text"
                         value={name}
@@ -118,7 +119,7 @@ const Search = ({ baseLink, setBaseLink, showAlert }) => {
                             setName(e.target.value.trim());
                         }}
                         placeholder="Name"
-                        className="text-xl px-5 mt-10 pr-13  max-w-[450px] py-2 bg-bgbg rounded-4xl border-2 border-bglight"
+                        className="text-lg px-3 mt-10 pr-13 py-1 max-w-[400px] bg-bgbg rounded-4xl border-2 border-bglight"
                     />
                     <div className="flex mt-5 gap-4 justify-center">
                         <button
@@ -139,7 +140,7 @@ const Search = ({ baseLink, setBaseLink, showAlert }) => {
                             <IoRefresh size={25} />
                         </button>
                     </div>
-                </>
+                </div>
             )}
 
             <div className="mt-6 mb-6 space-y-1 ">

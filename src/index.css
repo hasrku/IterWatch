@@ -19,6 +19,8 @@ body {
     --color-red: #ff0033;
 }
 
+/* ---------------------------------------------------------------------------- */
+/* custom scrollbar for large devices  */
 @media screen and (min-width: 1024px) {
     ::-webkit-scrollbar {
         width: 13px;
@@ -45,5 +47,145 @@ body {
         background-size: 16px;
         height: 15px;
         width: 100%;
+    }
+}
+
+/* ---------------------------------------------------------------------------- */
+
+/* custom css for video and audio seekbar */
+.hide-cursor {
+    cursor: none !important;
+}
+
+.custom-range {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    width: 100%;
+    --value-percent: 0%;
+}
+
+/* For WebKit browsers (Chrome, Safari, Edge) */
+.custom-range::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 9999px;
+    background: linear-gradient(to right, #ff0033 0%, #ff0033 var(--value-percent), #ffffff69 var(--value-percent), #ffffff69 100%);
+}
+
+.custom-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 14px;
+    width: 14px;
+    background-color: #ff0033;
+    border-radius: 9999px;
+    margin-top: -4px;
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+}
+
+/* For Firefox */
+.custom-range::-moz-range-track {
+    height: 6px;
+    background: linear-gradient(to right, #ff0033 0%, #ff0033 var(--value-percent), #ffffff69 var(--value-percent), #ffffff69 100%);
+}
+
+.custom-range::-moz-range-thumb {
+    height: 14px;
+    width: 14px;
+    background-color: #ff0033;
+    border-radius: 9999px;
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+}
+
+@media screen and (max-width: 1024px) {
+    .custom-range::-webkit-slider-runnable-track {
+        height: 3px;
+    }
+    .custom-range::-webkit-slider-thumb {
+        height: 13px;
+        width: 13px;
+        margin-top: -5px;
+    }
+
+    /* For Firefox */
+    .custom-range::-moz-range-track {
+        height: 3px;
+    }
+
+    .custom-range::-moz-range-thumb {
+        height: 13px;
+        width: 13px;
+    }
+}
+
+/* custom volume seekbar */
+.customV-range {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    width: 70px;
+    --value-percent: 0%;
+    color-scheme: light only;
+    forced-color-adjust: none;
+}
+
+/* For WebKit browsers (Chrome, Safari, Edge) */
+.customV-range::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: linear-gradient(to right, #fafafa 0%, #fafafa var(--value-percent), #ffffff69 var(--value-percent), #ffffff69 100%);
+}
+
+.customV-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 14px;
+    width: 14px;
+    background-color: #fafafa;
+    border-radius: 9999px;
+    margin-top: -4px;
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+}
+
+/* For Firefox */
+.customV-range::-moz-range-track {
+    height: 6px;
+    background: linear-gradient(to right, #fafafa 0%, #fafafa var(--value-percent), #ffffff69 var(--value-percent), #ffffff69 100%);
+}
+
+.customV-range::-moz-range-thumb {
+    height: 14px;
+    width: 14px;
+    background-color: #fafafa;
+    border-radius: 9999px;
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+}
+
+@media screen and (max-width: 1024px) {
+    .customV-range::-webkit-slider-runnable-track {
+        height: 3px;
+    }
+    .customV-range::-webkit-slider-thumb {
+        height: 10px;
+        width: 10px;
+        margin-top: -3px;
+    }
+
+    /* For Firefox */
+    .customV-range::-moz-range-track {
+        height: 3px;
+    }
+
+    .customV-range::-moz-range-thumb {
+        height: 10px;
+        width: 10px;
     }
 }

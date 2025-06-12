@@ -102,15 +102,18 @@ const Playlist = ({ name, epCount, curr, handleIconClick }) => {
 
             <div
                 className="absolute top-1/2 translate-y-[-50%] right-4 cursor-pointer z-20"
-                onClick={(e) => setShowMenu(!showMenu)}
+                onClick={(e) => setShowMenu(true)}
             >
                 <BsThreeDotsVertical className="text-neutral-400 size-6 hover:text-white" />
             </div>
 
             {showMenu && (
-                <div className="absolute top-10 right-4 bg-neutral-800 shadow-lg p-2 rounded z-30">
+                <div
+                    className="absolute w-full h-screen flex justify-end top-0 left-0 shadow-lg px-2 rounded z-30"
+                    onClick={() => setShowMenu(false)}
+                >
                     <button
-                        className="text-sm text-red-400 hover:text-red-300"
+                        className="text-sm mt-10 text-red-400 hover:text-red-300 w-fit h-fit bg-neutral-800 p-3 cursor-pointer rounded-lg"
                         onClick={handleRemove}
                     >
                         Remove

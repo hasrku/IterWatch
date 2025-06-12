@@ -6,17 +6,15 @@ import ReactPlayer from "react-player";
 import Logo from "./Logo";
 import NotFound from "./NotFound";
 import ListSidebar from "./ListSidebar";
-import { IoMdSkipForward, IoMdSkipBackward, IoIosPlay, IoIosPause, IoMdSettings, IoMdVolumeHigh, IoMdVolumeOff, IoMdRefresh } from "react-icons/io";
-import { MdOutlineFullscreen, MdOutlineFullscreenExit, MdForward10, MdReplay10 } from "react-icons/md";
-import "./custom.css";
-import "./customVolume.css";
 import ArcSpinner from "./ArcSpinner";
+import Controls from "./Controls";
 
 const Watch = () => {
     const { playlistName } = useParams();
     const [isPlaying, setIsPlaying] = useState(true);
     const [isStarted, setIsStarted] = useState(false);
     const [length, setLength] = useState(0);
+    const [speed, setSpeed] = useState(1);
     const [playlist, setPlaylist] = useState(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const videoRef = useRef(null);
@@ -231,7 +229,7 @@ const Watch = () => {
             if (isFull && !document.fullscreenElement) {
                 container.requestFullscreen().catch(console.error);
             }
-            console.log("Fullscreen mode:", isFull ? "entered" : "exited");
+            // console.log("Fullscreen mode:", isFull ? "entered" : "exited");
         };
 
         document.addEventListener("fullscreenchange", handleFullscreenChange);
@@ -269,6 +267,7 @@ const Watch = () => {
                             onProgress={handleProgress}
                             muted={muted}
                             volume={volume / 100}
+                            playbackRate={speed}
                             onStart={() => {
                                 setTimeout(() => {
                                     setMuted(false);
@@ -294,138 +293,24 @@ const Watch = () => {
                         <Controls
                             ref={controlsRef}
                             isPlaying={isPlaying}
-                        >
-                            {/* top controls */}
-                            <div className="w-full flex justify-between items-start bg-linear-0 from-[#26262600] to-[#0f0f0fd2] px-3 pb-2 pt-3">
-                                <p
-                                    className={`font-bold ml-2 flex flex-col lg:font-normal ${
-                                        isFullScreen ? "text-lg lg:text-3xl" : "lg:text-xl lg:ml-2"
-                                    } `}
-                                >
-                                    <span className="">
-                                        Episode: {currentIndex + 1} of {playlist.links.length}
-                                    </span>
-                                    <span className={`font-semibold text-sm lg:hidden text-neutral-50/80 ${isFullScreen ? "block" : "hidden"}`}>
-                                        {playlist.name}
-                                    </span>
-                                </p>
-                                <button className="p-1 rounded-full cursor-pointer">
-                                    <IoMdSettings className={` ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
-                                </button>
-                            </div>
-
-                            {/* middle controls */}
-                            <div className={`text-neutral-50 flex gap-10 lg:gap-25 justify-center items-center`}>
-                                <button
-                                    onClick={() => videoControl("ArrowLeft")}
-                                    className={`p-3 rounded-full disabled:opacity-40 ${
-                                        isFullScreen ? "block lg:hidden" : "hidden"
-                                    } cursor-pointer bg-[#26262637]`}
-                                >
-                                    <MdReplay10 className={` ${isFullScreen ? " size-6 lg:size-10" : "size-6 lg:size-7"}`} />
-                                </button>
-
-                                <button
-                                    onClick={() => goTo(-1)}
-                                    className="p-3  rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]"
-                                    disabled={currentIndex === 0}
-                                >
-                                    <IoMdSkipBackward className={` ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
-                                </button>
-                                <button
-                                    onClick={() => videoControl(" ")}
-                                    className="p-2 rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]"
-                                >
-                                    {isPlaying ? <IoIosPause className=" size-12 lg:size-13" /> : <IoIosPlay className=" size-12 lg:size-13" />}
-                                </button>
-                                <button
-                                    onClick={() => goTo(1)}
-                                    className="p-3  rounded-full disabled:opacity-40 cursor-pointer bg-[#26262637]"
-                                    disabled={currentIndex === playlist.links.length - 1}
-                                >
-                                    <IoMdSkipForward className={`  ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
-                                </button>
-                                <button
-                                    onClick={() => videoControl("ArrowRight")}
-                                    className={`p-3 rounded-full disabled:opacity-40 ${
-                                        isFullScreen ? "block lg:hidden" : "hidden"
-                                    } cursor-pointer bg-[#26262637]`}
-                                >
-                                    <MdForward10 className={` ${isFullScreen ? " size-6 lg:size-10" : "size-6 lg:size-7"}`} />
-                                </button>
-                            </div>
-
-                            {/* bottom controls */}
-                            <div className="px-3 pb-3 flex flex-col bg-linear-0 from-[#0f0f0fd2]  to-[#26262600]">
-                                {/* video seekbar */}
-                                <input
-                                    type="range"
-                                    min={0}
-                                    max={100}
-                                    step={0.01}
-                                    value={progress}
-                                    onChange={handleChange}
-                                    ref={videoSliderRef}
-                                    className="w-full h-1 mb-3  cursor-pointer custom-range "
-                                ></input>
-                                {/* video small controls */}
-                                <div className={`flex flex-row justify-between lg:m-1 ${isFullScreen ? "m-2  " : ""}`}>
-                                    <div className={`flex items-center justify-center ${isFullScreen ? "gap-6" : " gap-2"}`}>
-                                        <button
-                                            onClick={() => videoControl(" ")}
-                                            className="rounded-full disabled:opacity-40 cursor-pointer"
-                                        >
-                                            {isPlaying ? (
-                                                <IoIosPause className={` ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
-                                            ) : (
-                                                <IoIosPlay className={` ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
-                                            )}
-                                        </button>
-                                        <div className=" gap-2 justify-center items-center flex ">
-                                            <button
-                                                className="rounded-full disabled:opacity-40 cursor-pointer"
-                                                onClick={() => videoControl("m")}
-                                            >
-                                                {muted ? (
-                                                    <IoMdVolumeOff className={` ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
-                                                ) : (
-                                                    <IoMdVolumeHigh className={` ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
-                                                )}
-                                            </button>
-                                            <input
-                                                type="range"
-                                                min={0}
-                                                max={100}
-                                                value={volume}
-                                                ref={volumeSliderRef}
-                                                onChange={handleVolumeChange}
-                                                className={` h-1 bg-neutral-50 dark:bg-amber-50 rounded-lg cursor-pointer customV-range`}
-                                            ></input>
-                                        </div>
-                                        <p
-                                            className={`ml-2 flex items-center font-bold lg:font-normal justify-center ${
-                                                isFullScreen ? "text-md lg:text-xl" : "text-sm"
-                                            }`}
-                                        >
-                                            <span>{formatTime(secondsProgress)} /&nbsp;</span>
-                                            <span> {formatTime(length)}</span>
-                                        </p>
-                                    </div>
-                                    <div className="flex gap-2 items-center">
-                                        <button
-                                            onClick={() => videoControl("f")}
-                                            className=" rounded-full disabled:opacity-40 cursor-pointer"
-                                        >
-                                            {isFullScreen ? (
-                                                <MdOutlineFullscreenExit className={` ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
-                                            ) : (
-                                                <MdOutlineFullscreen className={` ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </Controls>
+                            isFullScreen={isFullScreen}
+                            currentIndex={currentIndex}
+                            playlist={playlist}
+                            videoControl={videoControl}
+                            goTo={goTo}
+                            handleChange={handleChange}
+                            videoSliderRef={videoSliderRef}
+                            handleVolumeChange={handleVolumeChange}
+                            volumeSliderRef={volumeSliderRef}
+                            secondsProgress={secondsProgress}
+                            length={length}
+                            progress={progress}
+                            muted={muted}
+                            volume={volume}
+                            formatTime={formatTime}
+                            speed={speed}
+                            setSpeed={setSpeed}
+                        ></Controls>
                     </div>
                     <h2 className="text-xl ml-1 mt-1 font-bold text-neutral-50">
                         {playlist.name}&nbsp;
@@ -466,79 +351,3 @@ const Watch = () => {
 };
 
 export default Watch;
-
-const Controls = forwardRef(({ children, isPlaying }, ref) => {
-    const [isVisible, setIsVisible] = useState(!isPlaying);
-    const [isMouseActive, setIsMouseActive] = useState(true);
-    const mouseTimeoutRef = useRef(null);
-    const timeoutRef = useRef(null);
-
-    // Expose setIsVisible to parent via ref
-    useImperativeHandle(ref, () => ({
-        setIsVisible,
-    }));
-
-    useEffect(() => {
-        if (!isPlaying) {
-            setIsVisible(true);
-            return;
-        }
-
-        if (isPlaying) {
-            timeoutRef.current = setTimeout(() => {
-                setIsVisible(false);
-            }, 3000);
-        }
-
-        return () => {
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-            }
-        };
-    }, [isVisible, isPlaying]);
-
-    const showControls = () => {
-        setIsVisible(true);
-        setIsMouseActive(true);
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-        }
-        if (isPlaying) {
-            timeoutRef.current = setTimeout(() => {
-                setIsVisible(false);
-            }, 3000);
-        }
-    };
-
-    const handleMouseMove = () => {
-        setIsMouseActive(true);
-        if (mouseTimeoutRef.current) {
-            clearTimeout(mouseTimeoutRef.current);
-        }
-        mouseTimeoutRef.current = setTimeout(() => {
-            setIsMouseActive(false);
-        }, 3000);
-    };
-
-    const hideControls = () => {
-        setIsVisible(false);
-    };
-
-    return (
-        <div
-            className={`absolute z-2 top-0 left-0 flex flex-col justify-between h-full w-full  transition-opacity duration-300 ${
-                isVisible ? "opacity-100" : "opacity-0"
-            } ${!isVisible && !isMouseActive ? "hide-cursor" : ""}`}
-            onMouseEnter={showControls}
-            onMouseLeave={hideControls}
-            onTouchStart={showControls}
-            onMouseMove={handleMouseMove}
-            onTouchEnd={() => {
-                // Small delay before hiding controls on touch devices
-                setTimeout(hideControls, 3000);
-            }}
-        >
-            {children}
-        </div>
-    );
-});
