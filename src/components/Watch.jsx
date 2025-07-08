@@ -244,6 +244,7 @@ const Watch = () => {
         // console.log("mouse moved");
         if (!controlsRef.current) return;
         controlsRef.current.style.visibility = "visible";
+        containerRef.current.style.cursor = "default";
 
         if (!isPlaying) return;
 
@@ -258,6 +259,7 @@ const Watch = () => {
         timeoutRef.current = setTimeout(() => {
             if (controlsRef.current) {
                 controlsRef.current.style.visibility = "hidden";
+                containerRef.current.style.cursor = "none";
             }
         }, 3000); // hide after 3 seconds
     };
