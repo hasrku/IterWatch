@@ -32,7 +32,13 @@ const Home = () => {
                 currentEp: 0,
                 start: 1,
                 epProgress: 0,
-                links: ["https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"],
+                links: [
+                    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+                    "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+                    "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+                    "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+                    "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+                ],
             };
             existing.push(playlist);
             localStorage.setItem("playlists", JSON.stringify(existing));
