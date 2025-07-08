@@ -28,13 +28,10 @@ const Watch = () => {
     const videoSliderRef = useRef(null);
     const [progress, setProgress] = useState(0);
     const [secondsProgress, setSecondsProgress] = useState(0);
-    // const controlsRef = useRef(null);
+
+    const controlsRef = useRef(null);
 
     const [isLoading, setIsLoading] = useState(false);
-
-    const controlsRef = useRef({
-        setIsVisible: (visible) => {},
-    });
 
     const formatTime = (seconds) => {
         const date = new Date(seconds * 1000);
@@ -119,7 +116,7 @@ const Watch = () => {
         });
     };
 
-    const videoControl = (key) => {
+    const videoControl = async (key) => {
         const container = containerRef.current;
         const video = videoRef.current;
         if (!video) return;
@@ -159,8 +156,15 @@ const Watch = () => {
             case "F":
                 if (!document.fullscreenElement) {
                     container.requestFullscreen().catch(console.error);
+                    setTimeout(() => {
+                        setIsFullScreen(true);
+                    }, 10);
+                    await screen.orientation.lock("landscape");
                 } else {
                     document.exitFullscreen();
+                    setTimeout(() => {
+                        setIsFullScreen(false);
+                    }, 10);
                 }
                 break;
             case "m":
@@ -187,6 +191,15 @@ const Watch = () => {
                 videoControl(e.key);
             }
         };
+        if (!isPlaying) {
+            controlsRef.current.style.visibility = "visible";
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        }
+        if (isPlaying) {
+            handleMouseMove();
+        }
 
         window.addEventListener("keydown", handleKeyDown);
         return () => {
@@ -200,7 +213,7 @@ const Watch = () => {
 
         const allPlaylists = JSON.parse(localStorage.getItem("playlists"));
         const updatedPlaylists = allPlaylists.map((p) => (p.name === playlist.name ? { ...p, epProgress: secondsProgress } : p));
-        const found = allPlaylists.find((p) => p.name === playlist.name);
+        // const found = allPlaylists.find((p) => p.name === playlist.name);
         // console.log(found.epProgress);
         localStorage.setItem("playlists", JSON.stringify(updatedPlaylists));
     }, [secondsProgress]);
@@ -221,23 +234,47 @@ const Watch = () => {
         }
     }, [currentIndex, isStarted]);
 
+    const timeoutRef = useRef(null);
     useEffect(() => {
-        const container = containerRef.current;
-        const handleFullscreenChange = () => {
-            const isFull = !!document.fullscreenElement;
-            setIsFullScreen(isFull);
-            if (isFull && !document.fullscreenElement) {
-                container.requestFullscreen().catch(console.error);
-            }
-            // console.log("Fullscreen mode:", isFull ? "entered" : "exited");
-        };
+        setTimeout(() => {
+            controlsRef.current.style.visibility = "hidden";
+        }, 3000);
+    }, []);
+    const handleMouseMove = () => {
+        // console.log("mouse moved");
+        if (!controlsRef.current) return;
+        controlsRef.current.style.visibility = "visible";
 
-        document.addEventListener("fullscreenchange", handleFullscreenChange);
+        if (!isPlaying) return;
+
+        if (controlsRef.current) {
+            controlsRef.current.style.visibility = "visible";
+        }
+
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+        }
+
+        timeoutRef.current = setTimeout(() => {
+            if (controlsRef.current) {
+                controlsRef.current.style.visibility = "hidden";
+            }
+        }, 3000); // hide after 3 seconds
+    };
+
+    useEffect(() => {
+        function onFullscreenChange() {
+            // document.fullscreenElement will be null if no element is in fullscreen
+            setIsFullScreen(Boolean(document.fullscreenElement));
+        }
+        document.addEventListener("fullscreenchange", onFullscreenChange);
+
+        onFullscreenChange();
 
         return () => {
-            document.removeEventListener("fullscreenchange", handleFullscreenChange);
+            document.removeEventListener("fullscreenchange", onFullscreenChange);
         };
-    }, []);
+    }, [isFullScreen]);
 
     if (!playlist) return <NotFound />;
 
@@ -254,8 +291,8 @@ const Watch = () => {
                     <div
                         className={`relative lg:rounded-md h-67 w-screen aspect-video lg:h-fit lg:w-[55vw] overflow-hidden`}
                         ref={containerRef}
-                        onMouseMove={() => controlsRef.current?.setIsVisible(true)}
-                        onTouchMove={() => controlsRef.current?.setIsVisible(true)}
+                        onMouseMove={handleMouseMove}
+                        onTouchMove={handleMouseMove}
                     >
                         {/* video player */}
                         <ReactPlayer

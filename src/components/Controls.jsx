@@ -1,5 +1,4 @@
-import { div } from "framer-motion/client";
-import { useImperativeHandle, forwardRef, useState, useRef, useEffect } from "react";
+import { forwardRef, useState } from "react";
 import { IoMdSkipForward, IoMdSkipBackward, IoIosPlay, IoIosPause, IoMdSettings, IoMdVolumeHigh, IoMdVolumeOff } from "react-icons/io";
 import { MdOutlineFullscreen, MdOutlineFullscreenExit, MdForward10, MdReplay10 } from "react-icons/md";
 
@@ -27,11 +26,6 @@ const Controls = forwardRef(
         },
         ref
     ) => {
-        const [isVisible, setIsVisible] = useState(!isPlaying);
-        const [isMouseActive, setIsMouseActive] = useState(true);
-        const mouseTimeoutRef = useRef(null);
-        const timeoutRef = useRef(null);
-
         const [showSpeed, setShowSpeed] = useState(false);
 
         const playBackSpeeds = [
@@ -43,57 +37,10 @@ const Controls = forwardRef(
             { key: 2, display: "2.0x" },
         ];
 
-        // Expose setIsVisible to parent via ref
-        useImperativeHandle(ref, () => ({
-            setIsVisible,
-        }));
-
-        useEffect(() => {
-            if (!isPlaying || showSpeed) {
-                setIsVisible(true);
-                return;
-            }
-
-            if (isPlaying) {
-                setTimeout(() => {
-                    setIsVisible(false);
-                }, 4000);
-            }
-        }, [isVisible, isPlaying, showSpeed]);
-
-        const showControls = () => {
-            setIsVisible(true);
-            setIsMouseActive(true);
-            if (isPlaying) {
-                setTimeout(() => {
-                    setIsVisible(false);
-                }, 4000);
-            }
-        };
-
-        const handleMouseMove = () => {
-            setIsMouseActive(true);
-            setTimeout(() => {
-                setIsMouseActive(false);
-            }, 4000);
-        };
-
-        const hideControls = () => {
-            setIsVisible(false);
-        };
-
         return (
             <div
-                className={`absolute z-2 top-0 left-0 flex flex-col justify-between h-full w-full  transition-opacity duration-300 ${
-                    isVisible ? "opacity-100" : "opacity-0"
-                } ${!isVisible && !isMouseActive ? "hide-cursor" : ""}`}
-                onMouseEnter={showControls}
-                onMouseLeave={hideControls}
-                onTouchStart={showControls}
-                onMouseMove={handleMouseMove}
-                onTouchEnd={() => {
-                    setTimeout(hideControls, 4000);
-                }}
+                ref={ref}
+                className={`absolute z-2 top-0 left-0 flex flex-col justify-between h-full w-full  transition-opacity duration-300`}
             >
                 {/* top controls */}
                 <div className="w-full flex justify-between items-start bg-linear-0 from-[#26262600] to-[#0f0f0fd2] px-3 pb-2 pt-3">
