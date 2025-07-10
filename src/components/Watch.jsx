@@ -8,6 +8,7 @@ import NotFound from "./NotFound";
 import ListSidebar from "./ListSidebar";
 import ArcSpinner from "./ArcSpinner";
 import Controls from "./Controls";
+import { MdForward10, MdReplay10 } from "react-icons/md";
 
 const Watch = () => {
     const { playlistName } = useParams();
@@ -30,6 +31,9 @@ const Watch = () => {
     const [secondsProgress, setSecondsProgress] = useState(0);
 
     const controlsRef = useRef(null);
+
+    const [showLeftSeek, setShowLeftSeek] = useState(false);
+    const [showRightSeek, setShowRightSeek] = useState(false);
 
     const [isLoading, setIsLoading] = useState(false);
 
@@ -116,6 +120,10 @@ const Watch = () => {
         });
     };
 
+    const lastLeftTapRef = useRef(0);
+    const lastRightTapRef = useRef(0);
+    const DOUBLE_TAP_DELAY = 300; // milliseconds
+
     const videoControl = async (key) => {
         const container = containerRef.current;
         const video = videoRef.current;
@@ -198,7 +206,7 @@ const Watch = () => {
             }
         }
         if (isPlaying) {
-            handleMouseMove();
+            handleMouseMove(false);
         }
 
         window.addEventListener("keydown", handleKeyDown);
@@ -240,6 +248,7 @@ const Watch = () => {
             controlsRef.current.style.visibility = "hidden";
         }, 3000);
     }, []);
+
     const handleMouseMove = () => {
         // console.log("mouse moved");
         if (!controlsRef.current) return;
@@ -261,7 +270,7 @@ const Watch = () => {
                 controlsRef.current.style.visibility = "hidden";
                 containerRef.current.style.cursor = "none";
             }
-        }, 3000); // hide after 3 seconds
+        }, 2500); // hide after 3 seconds
     };
 
     useEffect(() => {
@@ -293,8 +302,16 @@ const Watch = () => {
                     <div
                         className={`relative lg:rounded-md h-67 w-screen aspect-video lg:h-fit lg:w-[55vw] overflow-hidden`}
                         ref={containerRef}
-                        onMouseMove={handleMouseMove}
-                        onTouchMove={handleMouseMove}
+                        onMouseMove={() => {
+                            setTimeout(() => {
+                                handleMouseMove();
+                            }, 300);
+                        }}
+                        onTouchMove={() => {
+                            setTimeout(() => {
+                                handleMouseMove();
+                            }, 300);
+                        }}
                     >
                         {/* video player */}
                         <ReactPlayer
@@ -326,6 +343,44 @@ const Watch = () => {
                             <div className="absolute z-1 w-18 lg:w-25 aspect-square flex justify-center items-center top-1/2 left-1/2 translate-x-[-50%] translate-y-[-50%] text-5xl text-black">
                                 <ArcSpinner color={"#ffffff"} />
                             </div>
+                        )}
+
+                        <div
+                            className="w-[32%] h-5/10 z-3 absolute top-1/2 translate-y-[-50%] left-0 "
+                            onTouchEnd={() => {
+                                const now = Date.now();
+                                if (now - lastLeftTapRef.current < DOUBLE_TAP_DELAY) {
+                                    videoControl("ArrowLeft");
+                                    setShowLeftSeek(true);
+                                    setTimeout(() => setShowLeftSeek(false), 800);
+                                }
+                                lastLeftTapRef.current = now;
+                            }}
+                        ></div>
+                        {showLeftSeek && (
+                            <MdReplay10
+                                className={`absolute left-[20%] top-1/2 transform -translate-y-1/2 lg:hidden ${isFullScreen ? " size-6 " : "size-6"}`}
+                            />
+                        )}
+
+                        <div
+                            className="w-[32%] h-5/10 z-3 absolute top-1/2 translate-y-[-50%] right-0 "
+                            onTouchEnd={() => {
+                                const now = Date.now();
+                                if (now - lastRightTapRef.current < DOUBLE_TAP_DELAY) {
+                                    videoControl("ArrowRight");
+                                    setShowRightSeek(true);
+                                    setTimeout(() => setShowRightSeek(false), 800);
+                                }
+                                lastRightTapRef.current = now;
+                            }}
+                        ></div>
+                        {showRightSeek && (
+                            <MdForward10
+                                className={`absolute right-[20%] top-1/2 transform -translate-y-1/2 lg:hidden  ${
+                                    isFullScreen ? " size-6 " : "size-6"
+                                }`}
+                            />
                         )}
 
                         {/* video controls section */}

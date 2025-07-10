@@ -59,14 +59,14 @@ const Controls = forwardRef(
 
                 {/* middle controls */}
                 <div className={`text-neutral-50 flex gap-10 lg:gap-25 justify-center items-center`}>
-                    <button
+                    {/* <button
                         onClick={() => videoControl("ArrowLeft")}
                         className={`p-3 rounded-full disabled:opacity-40 ${
                             isFullScreen ? "block lg:hidden" : "hidden"
                         } cursor-pointer bg-[#26262637]`}
                     >
                         <MdReplay10 className={` ${isFullScreen ? " size-6 lg:size-10" : "size-6 lg:size-7"}`} />
-                    </button>
+                    </button> */}
 
                     <button
                         onClick={() => goTo(-1)}
@@ -88,14 +88,14 @@ const Controls = forwardRef(
                     >
                         <IoMdSkipForward className={`  ${isFullScreen ? "size-6 lg:size-10" : "size-6 lg:size-7"}`} />
                     </button>
-                    <button
+                    {/* <button
                         onClick={() => videoControl("ArrowRight")}
                         className={`p-3 rounded-full disabled:opacity-40 ${
                             isFullScreen ? "block lg:hidden" : "hidden"
                         } cursor-pointer bg-[#26262637]`}
                     >
                         <MdForward10 className={` ${isFullScreen ? " size-6 lg:size-10" : "size-6 lg:size-7"}`} />
-                    </button>
+                    </button> */}
                 </div>
 
                 {/* bottom controls */}
@@ -111,7 +111,7 @@ const Controls = forwardRef(
                         ref={videoSliderRef}
                         className="w-full h-1 mb-3  cursor-pointer custom-range "
                     ></input>
-                    {/* video small controls */}
+                    {/* bottom left controls */}
                     <div className={`flex flex-row justify-between lg:m-1 ${isFullScreen ? "m-2  " : ""}`}>
                         <div className={`flex items-center justify-center ${isFullScreen ? "gap-6" : " gap-2"}`}>
                             <button
@@ -154,6 +154,7 @@ const Controls = forwardRef(
                                 <span> {formatTime(length)}</span>
                             </p>
                         </div>
+                        {/* bottom right controls */}
                         <div className={`flex gap-3 lg:gap-5 items-center ${isFullScreen ? "lg:gap-8" : ""}`}>
                             <div
                                 className={`relative min-w-18 text-center px-2 py-1 rounded-lg transition duration-200 cursor-pointer hover:bg-[#26262637] ${
@@ -164,7 +165,7 @@ const Controls = forwardRef(
                                 <span> {playBackSpeeds.find((p) => p.key === speed).display}</span>
 
                                 {showSpeed && (
-                                    <div className="absolute z-5 mb-10 backdrop-blur-xs bg-[#26262652] bottom-0 rounded-t-xl left-0 min-w-18 text-center  py-1 ">
+                                    <div className="absolute mb-10 backdrop-blur-xs bg-[#26262652] bottom-0 rounded-t-xl left-0 min-w-18 text-center  py-1 ">
                                         {playBackSpeeds.map(({ key, display }) => (
                                             <div
                                                 key={key}
