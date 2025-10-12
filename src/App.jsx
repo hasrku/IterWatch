@@ -8,6 +8,7 @@ import ListSidebar from "./components/ListSidebar";
 import Home from "./components/Home";
 import Watch from "./components/Watch";
 import NotFound from "./components/NotFound";
+import Guide from "./components/Guide";
 
 const App = () => {
     const [baseLink, setBaseLink] = useState("");
@@ -30,6 +31,10 @@ const App = () => {
                 <Route
                     path="/"
                     element={<Home />}
+                />
+                <Route
+                    path="/guide"
+                    element={<Guide />}
                 />
                 <Route
                     path="/watch/:playlistName"

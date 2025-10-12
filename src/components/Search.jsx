@@ -48,7 +48,7 @@ const Search = ({ baseLink, setBaseLink, showAlert }) => {
     };
 
     return (
-        <div className="flex mt-16 px-5 flex-col justify-center items-center">
+        <div className="flex mt-0 px-5 flex-col justify-center items-center w-full">
             <p className="text-neutral-300 text-2xl">Usage</p>
             <p className="text-neutral-400 whitespace-pre-line">
                 Direct video link with `###` (e.g., https://.../episode###.mp4).{"\n"}

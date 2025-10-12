@@ -4,12 +4,16 @@ import Search from "./Search";
 import Alert from "./Alert";
 import { AnimatePresence } from "framer-motion";
 import ListSidebar from "./ListSidebar";
+import PlaylistCreator from "./LinkEnter";
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
+    const navigate = useNavigate();
     const [baseLink, setBaseLink] = useState("");
     const [status, setStatus] = useState("");
     const [message, setMessage] = useState("");
     const [show, setShow] = useState(false);
+    const [page, setPage] = useState(0);
 
     const showAlert = (status, message) => {
         setStatus(status);
@@ -23,10 +27,7 @@ const Home = () => {
     useEffect(() => {
         const existing = JSON.parse(localStorage.getItem("playlists") || "[]");
         const hasVisited = localStorage.getItem("visited");
-        // console.log(existing);
-        // console.log(hasVisited);
         if (existing.length === 0 && hasVisited == null) {
-            // console.log("from local");
             const playlist = {
                 name: "test",
                 currentEp: 0,
@@ -48,9 +49,16 @@ const Home = () => {
 
     return (
         <div className="bg-bg min-h-screen relative text-white px-2 md:px-8 lg:px-16 pt-5 overflow-hidden">
-            <Logo size="text-3xl" />
-
-            <ListSidebar />
+            <div className="flex flex-row items-center">
+                <Logo size="text-3xl" />
+                <span
+                    className="text-neutral-400 hover:text-neutral-200 ml-auto mr-16 text-lg font-medium cursor-pointer transition-colors duration-300"
+                    onClick={() => navigate("/guide")}
+                >
+                    Guide
+                </span>
+                <ListSidebar />
+            </div>
 
             <AnimatePresence className="fixed">
                 {show && (
@@ -61,11 +69,40 @@ const Home = () => {
                 )}
             </AnimatePresence>
 
-            <Search
-                baseLink={baseLink}
-                setBaseLink={setBaseLink}
-                showAlert={showAlert}
-            />
+            {/* ---------- PAGE SELECTOR ---------- */}
+            <div className="flex justify-center items-center gap-10 mt-10 border-b border-bglight/40 pb-2">
+                <button
+                    onClick={() => setPage(0)}
+                    className={`relative text-lg md:text-xl transition-all pb-1 ${
+                        page === 0 ? "text-neutral-200" : "text-neutral-500 hover:text-neutral-300"
+                    }`}
+                >
+                    Manual
+                    {page === 0 && <span className="absolute left-0 right-0 bottom-[-2px] h-[2px] bg-bglight rounded-full" />}
+                </button>
+
+                <button
+                    onClick={() => setPage(1)}
+                    className={`relative text-lg md:text-xl transition-all pb-1 ${
+                        page === 1 ? "text-neutral-200" : "text-neutral-500 hover:text-neutral-300"
+                    }`}
+                >
+                    Iteration
+                    {page === 1 && <span className="absolute left-0 right-0 bottom-[-2px] h-[2px] bg-bglight rounded-full" />}
+                </button>
+            </div>
+
+            {/* ---------- PAGE CONTENT ---------- */}
+            <div className="flex flex-col justify-center items-center mt-5 flex-1">
+                {page === 0 && <PlaylistCreator showAlert={showAlert} />}
+                {page === 1 && (
+                    <Search
+                        baseLink={baseLink}
+                        setBaseLink={setBaseLink}
+                        showAlert={showAlert}
+                    />
+                )}
+            </div>
         </div>
     );
 };
