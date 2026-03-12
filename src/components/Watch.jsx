@@ -34,6 +34,7 @@ const Watch = () => {
         if (found) {
             setPlaylist(found);
             setCurrentIndex(found.currentEp);
+            document.title = found.name + " | IterWatch";
         }
     }, [playlistName]);
 
