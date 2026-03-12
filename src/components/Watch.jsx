@@ -7,7 +7,7 @@ import { defaultLayoutIcons, DefaultVideoLayout } from "@vidstack/react/player/l
 import { IoMdSkipForward, IoMdSkipBackward } from "react-icons/io";
 
 import { Element, scroller } from "react-scroll";
-import { useEffect, useState, useRef, useLayoutEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import Logo from "./Logo";
 import ListSidebar from "./ListSidebar";
@@ -97,7 +97,7 @@ const Watch = () => {
                                         <>
                                             {/* --- PREVIOUS BUTTON --- */}
                                             <button
-                                                className="vds-button"
+                                                className="vds-button episode-skip"
                                                 onClick={() => goTo(-1)}
                                                 disabled={currentIndex === 0}
                                                 aria-label="Previous Episode"
@@ -111,7 +111,7 @@ const Watch = () => {
 
                                             {/* --- NEXT BUTTON --- */}
                                             <button
-                                                className="vds-button"
+                                                className="vds-button episode-skip"
                                                 onClick={() => goTo(1)}
                                                 disabled={currentIndex === playlist.links.length - 1}
                                                 aria-label="Next Episode"

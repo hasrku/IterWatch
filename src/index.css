@@ -33,6 +33,18 @@ body {
     display: none !important;
 }
 
+/* Hide skip buttons on mobile */
+@media (max-width: 768px) {
+    .episode-skip {
+        display: none;
+    }
+}
+
+/* Show them again when player is fullscreen */
+.vds-media-player[data-fullscreen="true"] .episode-skip {
+    display: inline-flex;
+}
+
 /* ---------------------------------------------------------------------------- */
 /* custom scrollbar for large devices  */
 @media screen and (min-width: 1024px) {
