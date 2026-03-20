@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { useNavigate } from "react-router-dom";
 
-const ListSidebar = ({ right, top }) => {
+const ListSidebar = () => {
     const playlists = JSON.parse(localStorage.getItem("playlists") || "[]");
 
     const [isOpen, setIsOpen] = useState(false);
@@ -20,14 +20,15 @@ const ListSidebar = ({ right, top }) => {
 
     return (
         <>
-            {!isOpen && (
-                <div>
-                    <IoIosMenu
-                        className={`absolute z-40 right-3 lg:right-16 top-2 size-9 lg:size-11 cursor-pointer fill-white p-1 lg:p-2 rounded-full hover:bg-bglight`}
-                        onClick={handleIconClick}
-                    />
-                </div>
-            )}
+            {/* {!isOpen && ( */}
+            <div>
+                <IoIosMenu
+                    className={`lg:right-16 size-9 lg:size-11 cursor-pointer fill-white p-1 lg:p-2 rounded-full hover:bg-bglight`}
+                    // className={`absolute z-40 right-3 lg:right-16 top-2 size-9 lg:size-11 cursor-pointer fill-white p-1 lg:p-2 rounded-full hover:bg-bglight`}
+                    onClick={handleIconClick}
+                />
+            </div>
+            {/* )} */}
 
             <div
                 className={`fixed z-50 right-0 top-0 h-screen py-5 px-3 pt-14 rounded-l-xl flex flex-col text-white bg-bglight w-[320px] transition-transform duration-300 ${

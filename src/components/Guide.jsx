@@ -4,8 +4,8 @@ import ListSidebar from "./ListSidebar";
 const Guide = () => {
     return (
         <div className="bg-bg min-h-screen relative text-white px-2 md:px-8 lg:px-16 pt-5 overflow-hidden">
-            <div className="flex flex-row items-center">
-                <Logo size="text-3xl" />
+            <div className="flex flex-row items-center justify-between">
+                <Logo size="text-2xl" />
 
                 <ListSidebar />
             </div>
@@ -13,6 +13,7 @@ const Guide = () => {
                 <div className="w-full max-w-4xl bg-neutral-900 p-6 sm:p-8 rounded-2xl shadow-lg border border-neutral-800 text-neutral-400">
                     <h1 className="text-3xl sm:text-4xl font-bold text-center mb-8 text-neutral-200">How It Works</h1>
                     <div className="space-y-10">
+                        {/* 1st option */}
                         <div>
                             <h2 className="text-2xl font-semibold text-neutral-300 mb-3 border-b border-neutral-700 pb-2">1. Manual Mode</h2>
                             <p className="mb-4">This mode is for when you already have a list of direct video links.</p>
@@ -40,6 +41,7 @@ const Guide = () => {
                                 </li>
                             </ol>
                         </div>
+                        {/* 2nd option */}
                         <div>
                             <h2 className="text-2xl font-semibold text-neutral-300 mb-3 border-b border-neutral-700 pb-2">2. Iteration Mode</h2>
                             <p className="mb-4">Use this mode for links that follow a numerical sequence (e.g., `.../ep-01.mp4`, `.../ep-02.mp4`).</p>
@@ -62,6 +64,25 @@ const Guide = () => {
                                 <li>
                                     <span className="font-semibold text-neutral-300">Name and Save:</span> Give your generated playlist a name and
                                     save it.
+                                </li>
+                            </ol>
+                        </div>
+                        {/* 3rd option */}
+                        <div>
+                            <h2 className="text-2xl font-semibold text-neutral-300 mb-3 border-b border-neutral-700 pb-2">3. Local Video Mode</h2>
+                            <p className="mb-4">Use this mode to load and play video files directly from your device.</p>
+                            <ol className="list-decimal list-inside space-y-2 pl-2">
+                                <li>
+                                    <span className="font-semibold text-neutral-300">Load Video:</span> Click the "Load Video" button to open your
+                                    device's file picker.
+                                </li>
+                                <li>
+                                    <span className="font-semibold text-neutral-300">Select File:</span> Choose any video file from your device.
+                                </li>
+
+                                <li>
+                                    <span className="font-semibold text-neutral-300">Change Video:</span> Click "Load Another Video" anytime to select
+                                    a different file.
                                 </li>
                             </ol>
                         </div>

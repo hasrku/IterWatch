@@ -5,6 +5,8 @@ import { MediaPlayer, MediaProvider } from "@vidstack/react";
 import { defaultLayoutIcons, DefaultVideoLayout } from "@vidstack/react/player/layouts/default";
 
 import { IoMdSkipForward, IoMdSkipBackward } from "react-icons/io";
+import { BsCopy } from "react-icons/bs";
+import { FaCheck } from "react-icons/fa6";
 
 import { Element, scroller } from "react-scroll";
 import { useEffect, useState, useRef } from "react";
@@ -17,6 +19,7 @@ const Watch = () => {
     const { playlistName } = useParams();
     const [playlist, setPlaylist] = useState(null);
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [isCopied, setIsCopied] = useState(false);
     const containerRef = useRef(null);
     const playerRef = useRef(null);
 
@@ -26,6 +29,14 @@ const Watch = () => {
                 playerRef.current.muted = false;
             }
         }, 500);
+    };
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(playlist?.links?.[currentIndex] || "");
+        setIsCopied(true);
+        setTimeout(() => {
+            setIsCopied(false);
+        }, 2000);
     };
 
     useEffect(() => {
@@ -66,16 +77,15 @@ const Watch = () => {
 
     return (
         <div className="flex flex-col h-screen lg:px-16 pt-2 bg-bg overflow-hidden">
-            <div className="pl-2">
+            <div className="pl-2 flex items-center justify-between mt-2">
                 <Logo size="text-2xl" />
+                <ListSidebar />
             </div>
-
-            <ListSidebar />
 
             <div className="flex flex-col h-screen lg:flex-row justify-center items-center gap-0 lg:gap-15 w-full mt-2 lg:mt-4 bg-bg text-white overflow-hidden">
                 <div className="h-max lg:h-full text-white flex flex-col lg:justify-center overflow-hidden">
                     <div
-                        className="relative h-90 lg:h-fit lg:w-[55vw] overflow-hidden"
+                        className="relative h-75 lg:h-fit lg:w-[55vw] overflow-hidden"
                         ref={containerRef}
                     >
                         <MediaPlayer
@@ -130,17 +140,29 @@ const Watch = () => {
                         </MediaPlayer>
                     </div>
 
-                    <h2 className="text-xl ml-1 mt-1 font-bold text-neutral-50">
-                        {playlist.name}
+                    <div className="mx-3 text-xl h-9 mt-0 font-bold text-neutral-50 inline-flex items-center">
+                        <p>{playlist.name}</p>
                         <span className="text-lg font-medium ml-2 text-neutral-400">
                             Episode: {currentIndex + 1} of {playlist.links.length}
                         </span>
-                    </h2>
+                        <span
+                            onClick={handleCopy}
+                            className="ml-auto cursor-pointer text-neutral-200 font-normal"
+                        >
+                            {isCopied ? (
+                                <span className=" flex items-center text-sm text-neutral-300 border border-neutral-600 rounded-lg px-2 py-[2px]">
+                                    <FaCheck className="size-4 text-green-500 mr-1" /> link copied!
+                                </span>
+                            ) : (
+                                <BsCopy className="size-4" />
+                            )}
+                        </span>
+                    </div>
                 </div>
 
                 <div
                     id="playlist-scroll-container"
-                    className="w-screen lg:w-[300px] h-[75vh] mt-4 lg:mt-0 overflow-y-auto bg-neutral-800 rounded-xl p-4"
+                    className="w-screen lg:w-[300px] h-[73vh] mt-3 lg:mt-0 overflow-y-auto bg-neutral-800 rounded-t-xl lg:rounded-xl p-4"
                 >
                     <p className="text-xl font-semibold mb-4">Playlist</p>
 
