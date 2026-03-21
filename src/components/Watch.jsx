@@ -4,9 +4,10 @@ import "@vidstack/react/player/styles/default/layouts/video.css";
 import { MediaPlayer, MediaProvider } from "@vidstack/react";
 import { defaultLayoutIcons, DefaultVideoLayout } from "@vidstack/react/player/layouts/default";
 
-import { IoMdSkipForward, IoMdSkipBackward } from "react-icons/io";
+import { IoMdSkipForward, IoMdSkipBackward, IoMdPlay } from "react-icons/io";
 import { BsCopy } from "react-icons/bs";
 import { FaCheck } from "react-icons/fa6";
+import { IoPlay } from "react-icons/io5";
 
 import { Element, scroller } from "react-scroll";
 import { useEffect, useState, useRef } from "react";
@@ -14,11 +15,13 @@ import { useParams } from "react-router-dom";
 import Logo from "./Logo";
 import ListSidebar from "./ListSidebar";
 import NotFound from "./NotFound";
+import PlayingAnimation from "./PlayingAnimation";
 
 const Watch = () => {
     const { playlistName } = useParams();
     const [playlist, setPlaylist] = useState(null);
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [hoverIndex, setHoverIndex] = useState(null);
     const [isCopied, setIsCopied] = useState(false);
     const containerRef = useRef(null);
     const playerRef = useRef(null);
@@ -76,16 +79,16 @@ const Watch = () => {
     if (!playlist) return <NotFound />;
 
     return (
-        <div className="flex flex-col h-screen lg:px-16 pt-2 bg-bg overflow-hidden">
+        <div className="flex flex-col h-screen lg:px-10 pt-2 bg-bg overflow-hidden">
             <div className="pl-2 flex items-center justify-between mt-2">
                 <Logo size="text-2xl" />
                 <ListSidebar />
             </div>
 
-            <div className="flex flex-col h-screen lg:flex-row justify-center items-center gap-0 lg:gap-15 w-full mt-2 lg:mt-4 bg-bg text-white overflow-hidden">
-                <div className="h-max lg:h-full text-white flex flex-col lg:justify-center overflow-hidden">
+            <div className="flex flex-col h-screen lg:flex-row justify-center gap-0 lg:gap-10 w-full mt-2 lg:mt-4 bg-bg text-white overflow-hidden">
+                <div className="h-max lg:h-full text-white flex flex-col  overflow-hidden">
                     <div
-                        className="relative h-75 lg:h-fit lg:w-[55vw] overflow-hidden"
+                        className="relative h-75 lg:h-fit lg:w-[60vw] overflow-hidden"
                         ref={containerRef}
                     >
                         <MediaPlayer
@@ -162,9 +165,15 @@ const Watch = () => {
 
                 <div
                     id="playlist-scroll-container"
-                    className="w-screen lg:w-[300px] h-[73vh] mt-3 lg:mt-0 overflow-y-auto bg-neutral-800 rounded-t-xl lg:rounded-xl p-4"
+                    className="w-screen lg:w-[350px] h-[73vh]  mt-3 lg:mt-0 overflow-y-auto bg-neutral-800 rounded-t-xl lg:rounded-lg p-4"
                 >
-                    <p className="text-xl font-semibold mb-4">Playlist</p>
+                    <div className="flex items-center gap-2 mb-4">
+                        <span className="text-xl font-semibold">Playlist</span>
+                        <span className="text-neutral-200">•</span>
+                        <span className="text-sm font-normal ml-2 text-neutral-400">
+                            {currentIndex + 1} / {playlist.links.length}
+                        </span>
+                    </div>
 
                     <div className="playlist-scroll flex flex-col gap-3">
                         {playlist.links.map((link, index) => (
@@ -174,11 +183,20 @@ const Watch = () => {
                             >
                                 <button
                                     onClick={() => setCurrentIndex(index)}
-                                    className={`w-full text-left p-3 rounded-md text-sm bg-neutral-700 hover:bg-neutral-600 transition ${
-                                        index === currentIndex ? "border-l-4 border-blue-400 bg-neutral-600" : ""
+                                    className={`w-full h-fit flex gap-5 items-center cursor-pointer text-left p-2 rounded-md text-sm transition ${
+                                        index === currentIndex ? "border-l-[0px] border-blue-400 bg-neutral-700" : "bg-neutral-800 hover:bg-[#2e2e2e]"
                                     }`}
+                                    onMouseEnter={() => setHoverIndex(index)}
+                                    onMouseLeave={() => setHoverIndex(null)}
                                 >
-                                    Episode {index + playlist.start}
+                                    <div className="w-18 h-12 flex items-center justify-center bg-black">
+                                        {hoverIndex === index && index !== currentIndex && <IoMdPlay className="size-5" />}
+                                        {index === currentIndex && <PlayingAnimation />}
+                                    </div>
+                                    <div className="">
+                                        <p className="font-medium text-neutral-300">Episode {index + playlist.start}</p>
+                                        <p className="text-neutral-400">{playlist.name}</p>
+                                    </div>
                                 </button>
                             </Element>
                         ))}
