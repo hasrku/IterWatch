@@ -1,7 +1,7 @@
 import "@vidstack/react/player/styles/default/theme.css";
 import "@vidstack/react/player/styles/default/layouts/video.css";
 
-import { MediaPlayer, MediaProvider } from "@vidstack/react";
+import { MediaPlayer, MediaProvider, useMediaState } from "@vidstack/react";
 import { defaultLayoutIcons, DefaultVideoLayout } from "@vidstack/react/player/layouts/default";
 
 import { IoMdSkipForward, IoMdSkipBackward, IoMdPlay } from "react-icons/io";
@@ -16,6 +16,24 @@ import Logo from "./Logo";
 import ListSidebar from "./ListSidebar";
 import NotFound from "./NotFound";
 import PlayingAnimation from "./PlayingAnimation";
+
+const VideoTitle = ({ name }) => {
+    const controlsVisible = useMediaState("controlsVisible");
+
+    return (
+        <div
+            className={`
+                absolute top-0 left-0 w-full px-4 py-3 z-10
+                bg-gradient-to-b from-black/40 to-transparent
+                text-neutral-50 pointer-events-none
+                transition-opacity duration-300
+                ${controlsVisible ? "opacity-100" : "opacity-0"}
+            `}
+        >
+            <p className="text-md font-semibold truncate">{name}</p>
+        </div>
+    );
+};
 
 const Watch = () => {
     const { playlistName } = useParams();
@@ -93,7 +111,7 @@ const Watch = () => {
                     >
                         <MediaPlayer
                             ref={playerRef}
-                            title={`${playlist.name}: episode ${currentIndex + 1}`}
+                            // title={`${playlist.name}: episode ${currentIndex + 1}`}
                             src={playlist?.links?.[currentIndex]}
                             aspectRatio="16/9"
                             autoPlay
@@ -103,6 +121,9 @@ const Watch = () => {
                             onEnded={() => goTo(1)}
                         >
                             <MediaProvider />
+
+                            <VideoTitle name={`${playlist.name}: episode ${currentIndex + 1}`} />
+
                             {/* <DefaultVideoLayout icons={defaultLayoutIcons} /> */}
                             <DefaultVideoLayout
                                 icons={defaultLayoutIcons}

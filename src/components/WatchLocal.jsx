@@ -2,8 +2,27 @@ import "@vidstack/react/player/styles/default/theme.css";
 import "@vidstack/react/player/styles/default/layouts/video.css";
 
 import React, { useRef, useState } from "react";
-import { MediaPlayer, MediaProvider } from "@vidstack/react";
+import { MediaPlayer, MediaProvider, useMediaState } from "@vidstack/react";
 import { defaultLayoutIcons, DefaultVideoLayout } from "@vidstack/react/player/layouts/default";
+
+// Separate component so it can use the media context
+const VideoTitle = ({ name }) => {
+    const controlsVisible = useMediaState("controlsVisible");
+
+    return (
+        <div
+            className={`
+                absolute top-0 left-0 w-full px-4 py-3 z-10
+                bg-gradient-to-b from-black/70 to-transparent
+                text-neutral-50 pointer-events-none
+                transition-opacity duration-300
+                ${controlsVisible ? "opacity-100" : "opacity-0"}
+            `}
+        >
+            <p className="text-md font-semibold truncate">{name}</p>
+        </div>
+    );
+};
 
 const WatchLocal = () => {
     const [videoSrc, setVideoSrc] = useState(null);
@@ -22,8 +41,7 @@ const WatchLocal = () => {
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
-        setVideoSrc({ src: file, type: "video/object" }); // File object, not blob URL
+        setVideoSrc({ src: file, type: "video/object" });
         setVideoName(file.name);
     };
 
@@ -51,7 +69,6 @@ const WatchLocal = () => {
                     <div className="w-screen lg:w-[55vw] max-w-5xl">
                         <MediaPlayer
                             key={videoName}
-                            title={videoName}
                             src={videoSrc}
                             aspectRatio="16/9"
                             autoPlay
@@ -59,15 +76,17 @@ const WatchLocal = () => {
                             playsInline
                             onCanPlay={handlePlay}
                             ref={playerRef}
+                            className="relative"
                         >
                             <MediaProvider />
+
+                            {/* Title lives inside MediaPlayer so it shares the media context */}
+                            <VideoTitle name={videoName} />
+
                             <DefaultVideoLayout icons={defaultLayoutIcons} />
                         </MediaPlayer>
                     </div>
 
-                    {/* <p className="mt-3 text-neutral-300 text-sm">
-                        Now Playing: <span className="text-white font-semibold">{videoName}</span>
-                    </p> */}
                     <button
                         onClick={() => fileInputRef.current.click()}
                         className="mt-4 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-sm text-white"
