@@ -6,7 +6,10 @@ import { AnimatePresence } from "framer-motion";
 import ListSidebar from "./ListSidebar";
 import PlaylistCreator from "./LinkEnter";
 import { useNavigate } from "react-router-dom";
-import WatchLocal from "./WatchLocal";
+import WatchLocalTracks from "./WatchLocalTracks";
+import WatchLocalDefault from "./WatchLocalDefault";
+import { ToggleButton } from "@vidstack/react";
+import ToggleSwitch from "./ToggleSwitch";
 
 const Home = () => {
     const navigate = useNavigate();
@@ -15,6 +18,8 @@ const Home = () => {
     const [message, setMessage] = useState("");
     const [show, setShow] = useState(false);
     const [page, setPage] = useState(0);
+
+    const [watchLocalDefault, setWatchLocalDefault] = useState(true);
 
     const showAlert = (status, message) => {
         setStatus(status);
@@ -112,7 +117,18 @@ const Home = () => {
                         showAlert={showAlert}
                     />
                 )}
-                {page === 2 && <WatchLocal />}
+                {page === 2 && (
+                    <div className="w-full">
+                        <div className="flex justify-end mb-3">
+                            <ToggleSwitch
+                                enabled={watchLocalDefault}
+                                setEnabled={setWatchLocalDefault}
+                                label="Default"
+                            />
+                        </div>
+                        {watchLocalDefault ? <WatchLocalDefault /> : <WatchLocalTracks />}
+                    </div>
+                )}
             </div>
         </div>
     );

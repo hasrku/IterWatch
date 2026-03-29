@@ -13,6 +13,45 @@ const CHUNK_SEC = 10; // seconds of audio fetched per chunk (forward only)
 const REFETCH_AT = 6; // seconds remaining before fetching next chunk
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ── FFmpeg mutex ──────────────────────────────────────────────────────────────
+let ffmpegLocked = false;
+const ffmpegWaiters = [];
+const acquireFFmpeg = () =>
+    new Promise((resolve) => {
+        if (!ffmpegLocked) {
+            ffmpegLocked = true;
+            resolve();
+        } else {
+            ffmpegWaiters.push(resolve);
+        }
+    });
+const releaseFFmpeg = () => {
+    if (ffmpegWaiters.length > 0) ffmpegWaiters.shift()();
+    else ffmpegLocked = false;
+};
+const runFFmpeg = async (...args) => {
+    await acquireFFmpeg();
+    try {
+        if (!ffmpeg.isLoaded()) await ffmpeg.load();
+        await ffmpeg.run(...args);
+    } catch (e) {
+        if (e?.message?.includes("not ready")) {
+            try {
+                await ffmpeg.load();
+                await ffmpeg.run(...args);
+            } catch (retryErr) {
+                releaseFFmpeg();
+                throw retryErr;
+            }
+        } else {
+            releaseFFmpeg();
+            throw e;
+        }
+    }
+    releaseFFmpeg();
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 const LANGS = {
     eng: "English",
     hin: "Hindi",
@@ -65,18 +104,23 @@ const WatchLocal = () => {
     const actxRef = useRef(null);
     const gainRef = useRef(null);
     const srcRef = useRef(null);
+    // Track the current object URL so we can revoke it before creating a new one
+    const objectURLRef = useRef(null);
 
     const ck = useRef({
         streamIdx: null,
         chunkStart: 0,
-        buf: null,
-        nextBuf: null,
+        // NOTE: we do NOT store the AudioBuffer here after scheduling.
+        // Once the AudioBufferSourceNode is playing, it holds its own reference.
+        // We only need a boolean to know whether a chunk is currently active.
+        hasChunk: false,
+        nextBuf: null, // pre-fetched next AudioBuffer — released after hand-off
         nextStart: 0,
         fetching: false,
         playing: false,
+        gen: 0,
     });
 
-    // Refs so event callbacks always see the latest values without stale closures
     const tracksRef = useRef([]);
     const activeIdxRef = useRef(null);
     useEffect(() => {
@@ -89,50 +133,43 @@ const WatchLocal = () => {
     // ── AudioContext ──────────────────────────────────────────────────────────
     const getActx = () => {
         if (!actxRef.current || actxRef.current.state === "closed") {
-            console.log("[ACTX] creating new AudioContext");
             actxRef.current = new AudioContext();
             gainRef.current = actxRef.current.createGain();
             gainRef.current.connect(actxRef.current.destination);
         }
-        if (actxRef.current.state === "suspended") {
-            console.log("[ACTX] resuming suspended context");
-            actxRef.current.resume();
-        }
-        console.log("[ACTX] state:", actxRef.current.state);
+        if (actxRef.current.state === "suspended") actxRef.current.resume();
         return actxRef.current;
     };
 
     const killNode = () => {
         if (srcRef.current) {
-            console.log("[NODE] stopping AudioBufferSourceNode");
             try {
                 srcRef.current.stop(0);
+            } catch {}
+            // Disconnect so the node (and its buffer) can be GC'd immediately
+            try {
+                srcRef.current.disconnect();
             } catch {}
             srcRef.current = null;
         }
     };
 
     const wipeAll = () => {
-        console.log("[WIPE] clearing all buffers and stopping audio");
         killNode();
-        ck.current.buf = null;
-        ck.current.nextBuf = null;
+        ck.current.hasChunk = false;
+        ck.current.nextBuf = null; // release AudioBuffer for GC
         ck.current.nextStart = 0;
         ck.current.fetching = false;
         ck.current.chunkStart = 0;
+        ck.current.gen += 1;
     };
 
-    // ── Schedule buffer, offset to sync with videoTime ────────────────────────
+    // ── Schedule buffer, offset so audio is in sync with videoTime ────────────
     const scheduleBuffer = useCallback((buf, bufStart, videoTime, rate = 1) => {
         const actx = getActx();
         killNode();
 
         const offset = Math.max(0, Math.min(videoTime - bufStart, buf.duration - 0.05));
-        console.log(
-            `[SCHEDULE] bufStart=${bufStart.toFixed(2)}s  videoTime=${videoTime.toFixed(2)}s  offset=${offset.toFixed(
-                2
-            )}s  rate=${rate}  bufDur=${buf.duration.toFixed(2)}s`
-        );
 
         const node = actx.createBufferSource();
         node.buffer = buf;
@@ -140,42 +177,40 @@ const WatchLocal = () => {
         node.connect(gainRef.current);
         node.start(actx.currentTime + 0.03, offset);
 
-        ck.current.buf = buf;
         ck.current.chunkStart = bufStart;
+        ck.current.hasChunk = true;
         srcRef.current = node;
+        // buf reference intentionally NOT stored in ck — the node owns it now.
+        // This lets the caller's local `buf` variable go out of scope and be GC'd.
 
         node.onended = () => {
-            console.log("[NODE] chunk ended naturally");
-            if (!ck.current.playing) {
-                console.log("[NODE] not playing — skip rollover");
-                return;
-            }
+            if (!ck.current.playing) return;
             const vid = videoRef.current;
-            if (!vid || vid.paused) {
-                console.log("[NODE] video paused — skip rollover");
-                return;
-            }
+            if (!vid || vid.paused) return;
 
             if (ck.current.nextBuf) {
-                console.log(`[NODE] rolling into nextBuf at ${ck.current.nextStart.toFixed(2)}s`);
                 const nb = ck.current.nextBuf;
                 const nbStart = ck.current.nextStart;
+                // Release slot before scheduling so the old buffer is GC-eligible
+                // the moment the new node takes ownership
                 ck.current.nextBuf = null;
                 ck.current.nextStart = 0;
                 ck.current.fetching = false;
                 scheduleBuffer(nb, nbStart, vid.currentTime, vid.playbackRate);
                 prefetchNext(ck.current.streamIdx, nbStart);
             } else {
-                console.warn("[NODE] chunk ended but nextBuf is EMPTY — audio gap!");
+                console.warn("[NODE] chunk ended — nextBuf EMPTY, audio gap!");
+                ck.current.hasChunk = false;
             }
         };
     }, []);
 
-    // ── Extract CHUNK_SEC of audio via FFmpeg ─────────────────────────────────
+    // ── Extract CHUNK_SEC seconds of audio via the mutex-guarded FFmpeg ───────
     const extractAudio = useCallback(async (streamIdx, from) => {
+        const myGen = ck.current.gen;
         const fname = `ck_${streamIdx}_${Math.floor(from)}.mp3`;
-        console.log(`[EXTRACT] stream=0:${streamIdx}  from=${from.toFixed(2)}s  → ${fname}`);
-        await ffmpeg.run(
+
+        await runFFmpeg(
             "-ss",
             String(from),
             "-i",
@@ -191,33 +226,40 @@ const WatchLocal = () => {
             "5",
             fname
         );
+
+        if (ck.current.gen !== myGen) {
+            try {
+                ffmpeg.FS("unlink", fname);
+            } catch {}
+            throw new Error("stale");
+        }
+
         const raw = ffmpeg.FS("readFile", fname);
+        // Unlink immediately — keeps the WASM virtual FS as lean as possible
         try {
             ffmpeg.FS("unlink", fname);
         } catch {}
-        console.log(`[EXTRACT] encoded ${raw.byteLength} bytes, decoding audio…`);
+
+        // Decode into an AudioBuffer; `raw` can be GC'd after decodeAudioData
+        // takes ownership of the underlying ArrayBuffer via transfer.
         const decoded = await getActx().decodeAudioData(raw.buffer.slice(0));
-        console.log(`[EXTRACT] ✓ decoded: dur=${decoded.duration.toFixed(2)}s  ch=${decoded.numberOfChannels}  sr=${decoded.sampleRate}Hz`);
+        // raw (Uint8Array) and its backing buffer are now eligible for GC
         return decoded;
     }, []);
 
     // ── Background pre-fetch: next chunk, forward only ────────────────────────
     const prefetchNext = useCallback(
         async (streamIdx, currentStart) => {
-            if (ck.current.fetching) {
-                console.log("[PREFETCH] already in-flight, skip");
-                return;
-            }
+            if (ck.current.fetching) return;
             ck.current.fetching = true;
-            const nextFrom = currentStart + CHUNK_SEC;
-            console.log(`[PREFETCH] fetching next chunk from ${nextFrom.toFixed(2)}s`);
             try {
-                const buf = await extractAudio(streamIdx, nextFrom);
-                ck.current.nextBuf = buf;
-                ck.current.nextStart = nextFrom;
-                console.log(`[PREFETCH] ✓ nextBuf ready at ${nextFrom.toFixed(2)}s`);
+                const buf = await extractAudio(streamIdx, currentStart + CHUNK_SEC);
+                if (buf) {
+                    ck.current.nextBuf = buf;
+                    ck.current.nextStart = currentStart + CHUNK_SEC;
+                }
             } catch (e) {
-                console.error("[PREFETCH] failed:", e);
+                if (e?.message !== "stale") console.error("[PREFETCH] failed:", e);
             }
             ck.current.fetching = false;
         },
@@ -227,40 +269,29 @@ const WatchLocal = () => {
     // ── Wipe → fetch → play from videoTime ───────────────────────────────────
     const loadAndPlay = useCallback(
         async (streamIdx, videoTime) => {
-            console.log(`[LOAD] fresh start — stream=0:${streamIdx}  from=${videoTime.toFixed(2)}s`);
             wipeAll();
             ck.current.streamIdx = streamIdx;
-
             try {
                 const buf = await extractAudio(streamIdx, videoTime);
-                if (!ck.current.playing) {
-                    console.warn("[LOAD] aborted — paused while decoding");
-                    return;
-                }
+                if (!buf) return;
+                if (!ck.current.playing) return;
                 const vid = videoRef.current;
                 const currentVid = vid?.currentTime ?? videoTime;
-                console.log(`[LOAD] scheduling — vid.currentTime now=${currentVid.toFixed(2)}s`);
                 scheduleBuffer(buf, videoTime, currentVid, vid?.playbackRate ?? 1);
+                // buf goes out of scope here — node holds the only remaining reference
                 prefetchNext(streamIdx, videoTime);
             } catch (e) {
-                console.error("[LOAD] error:", e);
+                if (e?.message !== "stale") console.error("[LOAD] error:", e);
             }
         },
         [extractAudio, scheduleBuffer, prefetchNext]
     );
 
-    // ── KEY FIX: video can autoplay before tracks are probed.
-    //    When activeIdx finally becomes valid and video is already running,
-    //    onPlay won't fire again — this effect manually kicks audio off. ────────
     useEffect(() => {
         if (activeIdx === null || !tracks.length) return;
         const vid = videoRef.current;
         if (!vid) return;
-
-        console.log(`[EFFECT:activeIdx] activeIdx=${activeIdx}  vid.paused=${vid.paused}  ck.playing=${ck.current.playing}`);
-
         if (!vid.paused && !ck.current.playing) {
-            console.log("[EFFECT:activeIdx] video already playing but audio not started — starting now");
             ck.current.playing = true;
             loadAndPlay(tracks[activeIdx].streamIdx, vid.currentTime);
         }
@@ -270,12 +301,7 @@ const WatchLocal = () => {
     const onPlay = useCallback(async () => {
         const idx = activeIdxRef.current;
         const tks = tracksRef.current;
-        console.log(`[VIDEO:onPlay] activeIdx=${idx}  tracks=${tks.length}  ck.playing=${ck.current.playing}`);
-
-        if (idx === null || !tks.length) {
-            console.warn("[VIDEO:onPlay] no track selected yet — skipping audio start");
-            return;
-        }
+        if (idx === null || !tks.length) return;
         ck.current.playing = true;
         const actx = getActx();
         if (actx.state === "suspended") await actx.resume();
@@ -283,24 +309,21 @@ const WatchLocal = () => {
     }, [loadAndPlay]);
 
     const onPause = useCallback(() => {
-        console.log("[VIDEO:onPause] stopping audio");
         ck.current.playing = false;
         killNode();
     }, []);
 
     const onSeeked = useCallback(async () => {
         const t = videoRef.current?.currentTime ?? 0;
-        console.log(`[VIDEO:onSeeked] position=${t.toFixed(2)}s  playing=${ck.current.playing}`);
         if (!ck.current.playing) return;
         await loadAndPlay(ck.current.streamIdx, t);
     }, [loadAndPlay]);
 
     const onTimeUpdate = useCallback(() => {
         const vid = videoRef.current;
-        if (!vid || !ck.current.playing || !ck.current.buf) return;
+        if (!vid || !ck.current.playing || !ck.current.hasChunk) return;
         const remaining = ck.current.chunkStart + CHUNK_SEC - vid.currentTime;
         if (remaining < REFETCH_AT && !ck.current.fetching && !ck.current.nextBuf) {
-            console.log(`[TIMEUPDATE] ${remaining.toFixed(1)}s left — triggering prefetch`);
             prefetchNext(ck.current.streamIdx, ck.current.chunkStart);
         }
     }, [prefetchNext]);
@@ -308,85 +331,77 @@ const WatchLocal = () => {
     // ── Track pill click ──────────────────────────────────────────────────────
     const switchTrack = useCallback(
         async (idx) => {
-            if (idx === activeIdxRef.current) {
-                console.log("[TRACK] same track, no-op");
-                return;
-            }
+            if (idx === activeIdxRef.current) return;
             const track = tracksRef.current[idx];
-            console.log(`[TRACK] switching → idx=${idx}  stream=0:${track?.streamIdx}  playing=${ck.current.playing}`);
             setActiveIdx(idx);
             if (ck.current.playing) {
                 await loadAndPlay(track.streamIdx, videoRef.current.currentTime);
             } else {
                 ck.current.streamIdx = track.streamIdx;
-                console.log("[TRACK] not playing — streamIdx updated for next play");
             }
         },
         [loadAndPlay]
     );
 
     // ── Mirror vidstack UI → hidden video ─────────────────────────────────────
-    const mirrorPlay = useCallback(() => {
-        console.log("[MIRROR] → play hidden video");
-        videoRef.current?.play().catch((e) => console.error("[MIRROR] play failed:", e));
-    }, []);
-
+    const mirrorPlay = useCallback(() => videoRef.current?.play().catch(console.error), []);
     const mirrorPause = useCallback(() => {
-        console.log("[MIRROR] → pause hidden video");
         if (!videoRef.current?.paused) videoRef.current?.pause();
     }, []);
-
     const mirrorSeek = useCallback(() => {
         const vid = videoRef.current;
-        if (playerRef.current && vid) {
-            const t = playerRef.current.currentTime ?? vid.currentTime;
-            console.log(`[MIRROR] → seek hidden video to ${t.toFixed(2)}s`);
-            vid.currentTime = t;
-        }
+        if (playerRef.current && vid) vid.currentTime = playerRef.current.currentTime ?? vid.currentTime;
     }, []);
 
     // ── File load + FFmpeg probe ──────────────────────────────────────────────
     const processFile = useCallback(async (file) => {
         if (!file) return;
-        console.log("[FILE] loading:", file.name, `(${(file.size / 1e6).toFixed(1)} MB)`);
 
         setAppPhase("probing");
         setTracks([]);
         setActiveIdx(null);
-        ck.current = { streamIdx: null, chunkStart: 0, buf: null, nextBuf: null, nextStart: 0, fetching: false, playing: false };
+        ck.current = { streamIdx: null, chunkStart: 0, hasChunk: false, nextBuf: null, nextStart: 0, fetching: false, playing: false, gen: 0 };
+
+        // ── Memory: revoke previous object URL before creating a new one ──────
+        if (objectURLRef.current) {
+            URL.revokeObjectURL(objectURLRef.current);
+            objectURLRef.current = null;
+        }
+
+        // ── Memory: unlink previous video from WASM FS before writing new one ─
+        // This frees the old file's copy from the WASM heap (often 1-4 GB).
+        if (ffmpeg.isLoaded()) {
+            try {
+                ffmpeg.FS("unlink", "input.video");
+            } catch {}
+        }
 
         const objectURL = URL.createObjectURL(file);
+        objectURLRef.current = objectURL;
         setMediaSrc({ src: file, type: "video/object" });
         setVideoName(file.name);
         if (videoRef.current) videoRef.current.src = objectURL;
 
-        if (!ffmpeg.isLoaded()) {
-            console.log("[FILE] loading FFmpeg WASM…");
-            await ffmpeg.load();
-        }
+        if (!ffmpeg.isLoaded()) await ffmpeg.load();
+
+        // ── Memory: fetchFile returns a Uint8Array — write it then let it drop ─
+        // We do NOT store the result in a variable so it's GC-eligible immediately
+        // after writeFile copies it into the WASM heap.
         ffmpeg.FS("writeFile", "input.video", await fetchFile(file));
-        console.log("[FILE] written to FFmpeg FS, probing…");
 
         let log = "";
         ffmpeg.setLogger(({ message }) => (log += message + "\n"));
-        try {
-            await ffmpeg.run("-i", "input.video");
-        } catch {}
+        await runFFmpeg("-i", "input.video").catch(() => {});
         ffmpeg.setLogger(() => {});
 
         const found = [];
         log.split("\n").forEach((line) => {
             if (line.includes("Stream #0:") && line.includes("Audio:")) {
                 const m = line.match(/Stream #0:(\d+)(?:\((\w+)\))?/);
-                if (m) {
-                    const t = { streamIdx: m[1], lang: m[2] || null, label: trackLabel(m[2], found.length) };
-                    console.log(`[PROBE] stream 0:${t.streamIdx}  lang=${t.lang}  → "${t.label}"`);
-                    found.push(t);
-                }
+                if (m) found.push({ streamIdx: m[1], lang: m[2] || null, label: trackLabel(m[2], found.length) });
             }
         });
 
-        console.log(`[PROBE] total: ${found.length} audio stream(s)`);
         setTracks(found);
         if (found.length) setActiveIdx(0);
         setAppPhase("ready");
@@ -404,8 +419,7 @@ const WatchLocal = () => {
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
-        <div className="flex flex-col  lg:px-10 pt-4 lg:pt-6 mb-20 bg-bg text-neutral-50 overflow-hidden font-sans">
-            {/* --- HIDDEN CORE LOGIC ELEMENTS --- */}
+        <div className="flex flex-col lg:px-10 pt-4 lg:pt-2 mb-20 bg-bg text-neutral-50 overflow-hidden font-sans">
             <video
                 ref={videoRef}
                 muted
@@ -416,7 +430,6 @@ const WatchLocal = () => {
                 onSeeked={onSeeked}
                 onTimeUpdate={onTimeUpdate}
             />
-
             <input
                 ref={fileInputRef}
                 type="file"
@@ -425,12 +438,10 @@ const WatchLocal = () => {
                 className="hidden"
             />
 
-            {/* --- UI RENDER --- */}
             {!mediaSrc ? (
-                /* DRAG AND DROP ZONE */
-                <div className="flex-1 flex flex-col items-center justify-center w-full  mx-auto px-4">
+                <div className="flex-1 flex flex-col items-center justify-center w-full mx-auto px-4">
                     <div
-                        className={`lg:w-4xl w-[300px] text-sm aspect-video lg:aspect-[21/9] flex flex-col items-center justify-center 
+                        className={`lg:w-xl w-[300px] text-sm aspect-video lg:aspect-[21/9] flex flex-col items-center justify-center
                                 border-2 border-dashed rounded-2xl transition-all duration-300 cursor-pointer shadow-lg
                                 ${
                                     isDrag
@@ -445,18 +456,17 @@ const WatchLocal = () => {
                         onDrop={handleDrop}
                         onClick={() => fileInputRef.current.click()}
                     >
-                        <div className={` mb-4 text-5xl transition-colors ${isDrag ? "text-blue-400" : "text-neutral-600"}`}>▣</div>
-                        <p className="text-neutral-300  font-medium mb-2">
+                        <div className={`mb-4 text-5xl transition-colors ${isDrag ? "text-blue-400" : "text-neutral-600"}`}>▣</div>
+                        <p className="text-neutral-300 text-lg font-medium mb-2">
                             Drop a video file here or <span className="text-blue-400 hover:text-blue-300 transition-colors">browse</span>
                         </p>
-                        {/* <p className="text-neutral-500 text-sm font-mono tracking-wide">MKV · MP4 · AVI · TS · M2TS · WebM</p> */}
+                        <p className="text-sm text-neutral-500">view local video with multiple audio tracks</p>
                     </div>
                 </div>
             ) : (
-                /* MAIN PLAYER & SIDEBAR LAYOUT */
-                <div className="flex flex-col lg:flex-row justify-center gap-6 lg:gap-10 w-full mt-2 lg:mt-4">
-                    {/* LEFT: VIDEO PLAYER AREA */}
-                    <div className="flex flex-col w-full lg:w-[60vw] max-w-5xl">
+                <div className="flex flex-col lg:flex-row justify-center gap-6 lg:gap-10 w-full">
+                    {/* VIDEO PLAYER */}
+                    <div className="flex flex-col w-full lg:w-[60vw] max-w-3xl">
                         <div className="relative rounded-xl overflow-hidden shadow-2xl bg-black border border-neutral-800">
                             <MediaPlayer
                                 key={videoName}
@@ -478,10 +488,9 @@ const WatchLocal = () => {
                         </div>
                     </div>
 
-                    {/* RIGHT: TRACKS SIDEBAR (Mimicking the Watch Playlist) */}
-                    <div className="flex-col flex justify-between">
+                    {/* TRACKS SIDEBAR */}
+                    <div className="flex-col flex gap-5">
                         <div className="w-full lg:w-[350px] lg:h-fit flex flex-col bg-neutral-800/80 rounded-xl p-4 border border-neutral-700/50">
-                            {/* SIDEBAR HEADER */}
                             <div className="flex items-center gap-2 mb-4 pb-4 border-b border-neutral-700">
                                 <span className="text-md font-semibold text-neutral-100">Audio Tracks</span>
                                 <span className="text-neutral-500">•</span>
@@ -490,7 +499,6 @@ const WatchLocal = () => {
                                 </span>
                             </div>
 
-                            {/* PROBING STATE */}
                             {appPhase === "probing" && (
                                 <div className="flex flex-col items-center justify-center h-40 text-neutral-400 text-sm gap-4">
                                     <span className="inline-block w-6 h-6 border-2 border-neutral-600 border-t-blue-500 rounded-full animate-spin" />
@@ -498,20 +506,17 @@ const WatchLocal = () => {
                                 </div>
                             )}
 
-                            {/* TRACKS LIST */}
                             {appPhase === "ready" && tracks.length > 0 && (
-                                <div className="flex flex-wrap gap-0 overflow-y-auto pr-1 pb-3 custom-scrollbar">
+                                <div className="flex flex-wrap gap-0 overflow-y-auto pr-1 pb-3">
                                     {tracks.map((t, i) => (
                                         <button
                                             key={t.streamIdx}
                                             onClick={() => switchTrack(i)}
-                                            className={`w-fit h-fit flex gap-4 items-center cursor-pointer text-left p-2.5 rounded-md text-sm transition-all duration-200
-                                        `}
+                                            className="w-fit h-fit flex gap-4 items-center cursor-pointer text-left p-2.5 rounded-md text-sm transition-all duration-200"
                                         >
                                             <p
-                                                className={`font-medium truncate px-3 py-2 rounded-lg transition  text-neutral-300 ${
-                                                    activeIdx === i ? "bg-blue-500 hover:bg-blue-600/60" : "bg-neutral-700 hover:bg-neutral-600/50"
-                                                }`}
+                                                className={`font-medium truncate px-3 py-2 rounded-lg transition text-neutral-300
+                                                ${activeIdx === i ? "bg-blue-500 hover:bg-blue-600/60" : "bg-neutral-700 hover:bg-neutral-600/50"}`}
                                             >
                                                 {t.label || `Audio Stream ${i + 1}`}
                                             </p>
@@ -520,15 +525,14 @@ const WatchLocal = () => {
                                 </div>
                             )}
 
-                            {/* NO TRACKS FALLBACK */}
                             {appPhase === "ready" && tracks.length === 0 && (
-                                <div className="flex flex-col items-center justify-center h-32 mt-4 rounded-lg border border-red-900/50 bg-red-950/20 text-center p-4">
+                                <div className="flex flex-col items-center justify-center h-32 rounded-lg border border-red-900/50 bg-red-950/20 text-center p-4">
                                     <span className="text-red-400 text-xl mb-2">⚠</span>
                                     <p className="text-red-300/80 text-sm">No audio streams detected in this file.</p>
                                 </div>
                             )}
                         </div>
-                        {/* VIDEO META & CONTROLS */}
+
                         <button
                             onClick={() => fileInputRef.current.click()}
                             className="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-md text-sm font-medium transition-colors border border-neutral-700 hover:border-neutral-600 shrink-0"
